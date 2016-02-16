@@ -706,6 +706,14 @@ class Preview extends RelativeLayout implements SurfaceHolder.Callback {
 
         // Cannot find the one match the aspect ratio, ignore the requirement
         if (optimalSize == null) {
+
+			optimalSize = sizes.get(0);
+			for(int i=0; i < sizes.size(); i++)
+			{
+				if(sizes.get(i).width > optimalSize.width)
+					optimalSize = sizes.get(i);
+			}
+
             minDiff = Double.MAX_VALUE;
             for (Camera.Size size : sizes) {
                 if (Math.abs(size.height - targetHeight) < minDiff) {
