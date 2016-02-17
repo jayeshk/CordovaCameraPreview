@@ -188,12 +188,12 @@ public class CameraActivity extends Fragment {
 	        });
         }
     }
-	
+
     private void setDefaultCameraId(){
-		
+
 		// Find the total number of cameras available
         numberOfCameras = Camera.getNumberOfCameras();
-		
+
 		int camId = defaultCamera.equals("front") ? Camera.CameraInfo.CAMERA_FACING_FRONT : Camera.CameraInfo.CAMERA_FACING_BACK;
 
 		// Find the ID of the default camera
@@ -206,7 +206,7 @@ public class CameraActivity extends Fragment {
 			}
 		}
 	}
-	
+
     @Override
     public void onResume() {
         super.onResume();
@@ -218,7 +218,7 @@ public class CameraActivity extends Fragment {
         }
 
         cameraCurrentlyLocked = defaultCameraId;
-        
+
         if(mPreview.mPreviewSize == null){
 		mPreview.setCamera(mCamera, cameraCurrentlyLocked);
 	} else {
@@ -316,14 +316,14 @@ public class CameraActivity extends Fragment {
         canvas.drawBitmap(bitmap, -rect.left, -rect.top, null);
         return ret;
     }
-	
+
 	public void takePicture(final double maxWidth, final double maxHeight){
 		final ImageView pictureView = (ImageView) view.findViewById(getResources().getIdentifier("picture_view", "id", appResourcesPackage));
 		if(mPreview != null) {
-			
+
 			if(!canTakePicture)
 				return;
-			
+
 			canTakePicture = false;
 
 			mPreview.setOneShotPreviewCallback(new Camera.PreviewCallback() {
@@ -480,7 +480,7 @@ public class CameraActivity extends Fragment {
 		}
 		return inSampleSize;
 	}
-	
+
     private Bitmap loadBitmapFromView(View v) {
         Bitmap b = Bitmap.createBitmap( v.getMeasuredWidth(), v.getMeasuredHeight(), Bitmap.Config.ARGB_8888);
         Canvas c = new Canvas(b);
@@ -488,7 +488,7 @@ public class CameraActivity extends Fragment {
         v.draw(c);
         return b;
     }
-    
+
     @Override
     public void onDestroy() {
         super.onDestroy();
@@ -526,7 +526,7 @@ class Preview extends RelativeLayout implements SurfaceHolder.Callback {
         mCamera = camera;
         this.cameraId = cameraId;
         if (mCamera != null) {
-        	
+
         	List<String> mFocusModes = mCamera.getParameters().getSupportedFocusModes();
 
 			Camera.Parameters params = mCamera.getParameters();
@@ -783,6 +783,7 @@ class Preview extends RelativeLayout implements SurfaceHolder.Callback {
         }
     }
 }
+
 class TapGestureDetector extends GestureDetector.SimpleOnGestureListener{
 
 	@Override
@@ -800,6 +801,7 @@ class TapGestureDetector extends GestureDetector.SimpleOnGestureListener{
 		return true;
 	}
 }
+
 class CustomSurfaceView extends SurfaceView implements SurfaceHolder.Callback{
     private final String TAG = "CustomSurfaceView";
 

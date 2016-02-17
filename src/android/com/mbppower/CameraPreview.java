@@ -26,56 +26,62 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
 	private final String takePictureAction = "takePicture";
 	private final String showCameraAction = "showCamera";
 	private final String hideCameraAction = "hideCamera";
+	private final String setFlashLightAction = "setFlashLight";
 
 	private CameraActivity fragment;
 	private CallbackContext takePictureCallbackContext;
 	private int containerViewId = 1;
+
 	public CameraPreview(){
 		super();
 		Log.d(TAG, "Constructing");
 	}
 
-    @Override
-    public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
+	@Override
+	public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
 
-    	if (setOnPictureTakenHandlerAction.equals(action)){
-    		return setOnPictureTakenHandler(args, callbackContext);
-    	}
-        else if (startCameraAction.equals(action)){
-    		return startCamera(args, callbackContext);
-    	}
-	    else if (takePictureAction.equals(action)){
-		    return takePicture(args, callbackContext);
-	    }
-	    else if (setColorEffectAction.equals(action)){
-	      return setColorEffect(args, callbackContext);
-	    }
-	    else if (stopCameraAction.equals(action)){
-		    return stopCamera(args, callbackContext);
-	    }
-	    else if (hideCameraAction.equals(action)){
-		    return hideCamera(args, callbackContext);
-	    }
-	    else if (showCameraAction.equals(action)){
-		    return showCamera(args, callbackContext);
-	    }
-	    else if (switchCameraAction.equals(action)){
-		    return switchCamera(args, callbackContext);
-	    }
+		if (setOnPictureTakenHandlerAction.equals(action)){
+			return setOnPictureTakenHandler(args, callbackContext);
+		}
+		else if (startCameraAction.equals(action)){
+			return startCamera(args, callbackContext);
+		}
+		else if (takePictureAction.equals(action)){
+			return takePicture(args, callbackContext);
+		}
+		else if (setColorEffectAction.equals(action)){
+			return setColorEffect(args, callbackContext);
+		}
+		else if (stopCameraAction.equals(action)){
+			return stopCamera(args, callbackContext);
+		}
+		else if (hideCameraAction.equals(action)){
+			return hideCamera(args, callbackContext);
+		}
+		else if (showCameraAction.equals(action)){
+			return showCamera(args, callbackContext);
+		}
+		else if (switchCameraAction.equals(action)){
+			return switchCamera(args, callbackContext);
+		}
+		else if (setFlashLightAction.equals(action))
+		{
+			return setFlashLight(args, callbackContext);
+		}
 
-    	return false;
-    }
+		return false;
+	}
 
 	private boolean startCamera(final JSONArray args, CallbackContext callbackContext) {
-        if(fragment != null){
-	        return false;
-        }
+		if(fragment != null){
+			return false;
+		}
 		fragment = new CameraActivity();
 		fragment.setEventListener(this);
 
 		cordova.getActivity().runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
+			@Override
+			public void run() {
 
 				try {
 					DisplayMetrics metrics = cordova.getActivity().getResources().getDisplayMetrics();
@@ -122,8 +128,8 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
 				catch(Exception e){
 					e.printStackTrace();
 				}
-            }
-        });
+			}
+		});
 		return true;
 	}
 	private boolean takePicture(final JSONArray args, CallbackContext callbackContext) {
@@ -154,46 +160,48 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
 	}
 
 	private boolean setColorEffect(final JSONArray args, CallbackContext callbackContext) {
-	  if(fragment == null){
-	    return false;
-	  }
+		if(fragment == null){
+			return false;
+		}
 
-    Camera camera = fragment.getCamera();
-    if (camera == null){
-      return true;
-    }
+		Camera camera = fragment.getCamera();
+		if (camera == null){
+			return true;
+		}
 
-    Camera.Parameters params = camera.getParameters();
+		Camera.Parameters params = camera.getParameters();
 
-    try {
-      String effect = args.getString(0);
+		try {
+			String effect = args.getString(0);
 
-      if (effect.equals("aqua")) {
-        params.setColorEffect(Camera.Parameters.EFFECT_AQUA);
-      } else if (effect.equals("blackboard")) {
-        params.setColorEffect(Camera.Parameters.EFFECT_BLACKBOARD);
-      } else if (effect.equals("mono")) {
-        params.setColorEffect(Camera.Parameters.EFFECT_MONO);
-      } else if (effect.equals("negative")) {
-        params.setColorEffect(Camera.Parameters.EFFECT_NEGATIVE);
-      } else if (effect.equals("none")) {
-        params.setColorEffect(Camera.Parameters.EFFECT_NONE);
-      } else if (effect.equals("posterize")) {
-        params.setColorEffect(Camera.Parameters.EFFECT_POSTERIZE);
-      } else if (effect.equals("sepia")) {
-        params.setColorEffect(Camera.Parameters.EFFECT_SEPIA);
-      } else if (effect.equals("solarize")) {
-        params.setColorEffect(Camera.Parameters.EFFECT_SOLARIZE);
-      } else if (effect.equals("whiteboard")) {
-        params.setColorEffect(Camera.Parameters.EFFECT_WHITEBOARD);
-      }
+			if (effect.equals("aqua")) {
+				params.setColorEffect(Camera.Parameters.EFFECT_AQUA);
+			} else if (effect.equals("blackboard")) {
+				params.setColorEffect(Camera.Parameters.EFFECT_BLACKBOARD);
+			} else if (effect.equals("mono")) {
+				params.setColorEffect(Camera.Parameters.EFFECT_MONO);
+			} else if (effect.equals("negative")) {
+				params.setColorEffect(Camera.Parameters.EFFECT_NEGATIVE);
+			} else if (effect.equals("none")) {
+				params.setColorEffect(Camera.Parameters.EFFECT_NONE);
+			} else if (effect.equals("posterize")) {
+				params.setColorEffect(Camera.Parameters.EFFECT_POSTERIZE);
+			} else if (effect.equals("sepia")) {
+				params.setColorEffect(Camera.Parameters.EFFECT_SEPIA);
+			} else if (effect.equals("solarize")) {
+				params.setColorEffect(Camera.Parameters.EFFECT_SOLARIZE);
+			} else if (effect.equals("whiteboard")) {
+				params.setColorEffect(Camera.Parameters.EFFECT_WHITEBOARD);
+			}
 
-  	  fragment.setCameraParameters(params);
-	    return true;
-    } catch(Exception e) {
-      e.printStackTrace();
-      return false;
-    }
+			fragment.setCameraParameters(params);
+			return true;
+		} catch(Exception e)
+		{
+			e.printStackTrace();
+			return false;
+		}
+
 	}
 
 	private boolean stopCamera(final JSONArray args, CallbackContext callbackContext) {
@@ -242,9 +250,50 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
 		return true;
 	}
 
-    private boolean setOnPictureTakenHandler(JSONArray args, CallbackContext callbackContext) {
-    	Log.d(TAG, "setOnPictureTakenHandler");
-	    takePictureCallbackContext = callbackContext;
-    	return true;
+	private boolean setFlashLight(final JSONArray args, CallbackContext callbackContext)
+	{
+		if (fragment == null)
+		{
+			return false;
+		}
+
+		Camera camera = fragment.getCamera();
+
+		if (camera == null)
+		{
+			return true;
+		}
+
+		Camera.Parameters params = camera.getParameters();
+
+		try
+		{
+
+			boolean mode = args.getBoolean(0);
+
+			if (mode)
+			{
+				params.setFlashMode(Camera.Parameters.FLASH_MODE_ON);
+			}
+			else
+			{
+				params.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
+			}
+
+			fragment.setCameraParameters(params);
+			return true;
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+			return false;
+		}
+
+	}
+
+	private boolean setOnPictureTakenHandler(JSONArray args, CallbackContext callbackContext) {
+		Log.d(TAG, "setOnPictureTakenHandler");
+		takePictureCallbackContext = callbackContext;
+		return true;
 	}
 }

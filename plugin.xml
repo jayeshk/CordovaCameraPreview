@@ -29,6 +29,8 @@
 	<uses-feature android:name="android.hardware.camera" />
 	<uses-feature android:name="android.hardware.camera.autofocus" />
 	<uses-permission android:name="android.permission.CAMERA" />
+  <uses-permission android:name="android.permission.FLASHLIGHT" />
+
 	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
     </config-file>
     <config-file target="AndroidManifest.xml" parent="/manifest/application">
@@ -41,7 +43,6 @@
     <source-file src="src/android/com/mbppower/camera_theme.xml" target-dir="res/values" />
         
   </platform>
-
     <!-- ios -->
     <platform name="ios">
         <config-file target="config.xml" parent="/*">
