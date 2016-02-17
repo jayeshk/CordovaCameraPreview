@@ -252,11 +252,12 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
 
 	private boolean setFlashLight(final JSONArray args, CallbackContext callbackContext)
 	{
+		Log.d("log","In the set flash function");
 		if (fragment == null)
 		{
 			return false;
 		}
-
+		Log.d("log","Getting the camera...");
 		Camera camera = fragment.getCamera();
 
 		if (camera == null)
@@ -266,18 +267,21 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
 
 		Camera.Parameters params = camera.getParameters();
 
+		Log.d("log","Before camera parms seting try");
 		try
 		{
 
-			boolean mode = args.getBoolean(0);
+			Boolean mode = args.getBoolean(0);
 
 			if (mode)
 			{
+				Log.d("log","Mode on flash");
 				params.setFlashMode(Camera.Parameters.FLASH_MODE_ON);
 			}
 			else
 			{
-				params.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
+				Log.d("log","Mode off flash");
+				params.setFlashMode(Camera.Parameters.FLASH_MODE_ON);
 			}
 
 			fragment.setCameraParameters(params);
@@ -288,7 +292,7 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
 			e.printStackTrace();
 			return false;
 		}
-
+		return true;
 	}
 
 	private boolean setOnPictureTakenHandler(JSONArray args, CallbackContext callbackContext) {
