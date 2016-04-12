@@ -27,6 +27,7 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
 	private final String showCameraAction = "showCamera";
 	private final String hideCameraAction = "hideCamera";
 	private final String setFlashLightAction = "setFlashLight";
+	private final String setTorchLightAction = "setTorchLight";
 
 	private CameraActivity fragment;
 	private CallbackContext takePictureCallbackContext;
@@ -34,7 +35,7 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
 
 	public CameraPreview(){
 		super();
-		Log.d(TAG, "Constructing");
+		Log.d(TAG, "LOL: Constructing");
 	}
 
 	@Override
@@ -68,11 +69,16 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
 		{
 			return setFlashLight(args, callbackContext);
 		}
+		else if (setTorchLightAction.equals(action))
+		{
+			return setTorchLight(args, callbackContext);
+		}
 
 		return false;
 	}
 
 	private boolean startCamera(final JSONArray args, CallbackContext callbackContext) {
+		Log.d(TAG, "LOL: startCamera function");
 		if(fragment != null){
 			return false;
 		}
@@ -133,6 +139,7 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
 		return true;
 	}
 	private boolean takePicture(final JSONArray args, CallbackContext callbackContext) {
+		Log.d("warn","Picture taken...");
 		if(fragment == null){
 			return false;
 		}
@@ -243,7 +250,8 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
 		return true;
 	}
 	private boolean switchCamera(final JSONArray args, CallbackContext callbackContext) {
-		if(fragment == null){
+		if(fragment == null)
+		{
 			return false;
 		}
 		fragment.switchCamera();
@@ -252,38 +260,35 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
 
 	private boolean setFlashLight(final JSONArray args, CallbackContext callbackContext)
 	{
-		Log.d("log","In the set flash function");
-		if (fragment == null)
+		if (fragment == null || !fragment.hasFlashLight())
 		{
 			return false;
 		}
-		Log.d("log","Getting the camera...");
 		Camera camera = fragment.getCamera();
-
 		if (camera == null)
 		{
 			return true;
 		}
-
 		Camera.Parameters params = camera.getParameters();
 
-		Log.d("log","Before camera parms seting try");
 		try
 		{
-
 			Boolean mode = args.getBoolean(0);
-
 			if (mode)
 			{
-				Log.d("log","Mode on flash");
-				params.setFlashMode(Camera.Parameters.FLASH_MODE_ON);
+				if (params.getSupportedFlashModes().contains(Camera.Parameters.FLASH_MODE_TORCH))
+				{
+					params.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);
+				}
+				else
+				{
+					params.setFlashMode(Camera.Parameters.FLASH_MODE_ON);
+				}
 			}
 			else
 			{
-				Log.d("log","Mode off flash");
-				params.setFlashMode(Camera.Parameters.FLASH_MODE_ON);
+				params.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
 			}
-
 			fragment.setCameraParameters(params);
 			return true;
 		}
@@ -292,7 +297,39 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
 			e.printStackTrace();
 			return false;
 		}
-		return true;
+	}
+
+	private boolean setTorchLight(final JSONArray args, CallbackContext callbackContext)
+	{
+		if (fragment == null || !fragment.hasFlashLight())
+		{
+			return false;
+		}
+		Camera camera = fragment.getCamera();
+		if (camera == null)
+		{
+			return true;
+		}
+		Camera.Parameters params = camera.getParameters();
+		try
+		{
+			Boolean mode = args.getBoolean(0);
+			if (mode)
+			{
+				params.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);
+			}
+			else
+			{
+				params.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
+			}
+			fragment.setCameraParameters(params);
+			return true;
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+			return false;
+		}
 	}
 
 	private boolean setOnPictureTakenHandler(JSONArray args, CallbackContext callbackContext) {

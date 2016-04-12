@@ -17,14 +17,14 @@
 
   <!-- android -->
   <platform name="android">
-  
+
     <config-file target="res/xml/config.xml" parent="/*">
       <feature name="CameraPreview">
         <param name="android-package" value="com.mbppower.CameraPreview" />
         <param name="onload" value="true" />
       </feature>
     </config-file>
-    
+
     <config-file target="AndroidManifest.xml" parent="/manifest">
 	<uses-feature android:name="android.hardware.camera" />
 	<uses-feature android:name="android.hardware.camera.autofocus" />
@@ -36,12 +36,12 @@
     <config-file target="AndroidManifest.xml" parent="/manifest/application">
 	<activity android:name="com.mbppower.CameraActivity" android:screenOrientation="portrait" android:theme="@style/CameraPreviewTheme" />
     </config-file>
-    
+
     <source-file src="src/android/com/mbppower/CameraPreview.java" target-dir="src/com/mbppower" />
     <source-file src="src/android/com/mbppower/CameraActivity.java" target-dir="src/com/mbppower" />
     <source-file src="src/android/com/mbppower/camera_activity.xml" target-dir="res/layout" />
     <source-file src="src/android/com/mbppower/camera_theme.xml" target-dir="res/values" />
-        
+
   </platform>
     <!-- ios -->
     <platform name="ios">
@@ -59,7 +59,7 @@
 
         <header-file src="src/ios/CameraRenderController.h" />
         <source-file src="src/ios/CameraRenderController.m" />
-	
+
 	       <framework src="ImageIO.framework" weak="true" />
          <framework src="MobileCoreServices.framework" />
 	       <framework src="CoreLocation.framework" />
@@ -70,7 +70,7 @@
          <framework src="OpenGLES.framework" />
          <framework src="GLKit.framework" />
          <framework src="CoreVideo.framework" />
-	 
+
     </platform>
 
 </plugin>

@@ -44,8 +44,12 @@ CameraPreview.show = function() {
   exec(null, null, PLUGIN_NAME, "showCamera", []);
 };
 
-CameraPreview.setFlashLight = function(mode) {
-  exec(null, null, PLUGIN_NAME, "setFlashLight", [mode]);
+CameraPreview.setFlashLight = function(flashBool) {
+  exec(null, null, PLUGIN_NAME, "setFlashLight", [flashBool]);
+};
+
+CameraPreview.setTorchLight = function(torchBool) {
+  exec(null, null, PLUGIN_NAME, "setTorchLight", [torchBool]);
 };
 
 CameraPreview.disable = function(disable) {

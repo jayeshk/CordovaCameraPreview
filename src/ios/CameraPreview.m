@@ -145,6 +145,35 @@
         self.onPictureTakenHandlerId = command.callbackId;
 }
 
+
+-(void) setFlashLight:(CDVInvokedUrlCommand *)command {
+    
+    NSLog(@"setFlashLight...");
+    AVCaptureDevice *flashLight = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
+    if ([flashLight isTorchAvailable] && [flashLight isTorchModeSupported:AVCaptureTorchModeOn])
+    {
+    
+        BOOL needToActivate = (BOOL)[command.arguments[0] boolValue];
+        BOOL success = [flashLight lockForConfiguration:nil];
+    
+        
+        if (success)
+        {
+            if (needToActivate == FALSE)
+            {
+                [flashLight setTorchMode:AVCaptureTorchModeOff];
+                NSLog(@"setFlashLight FALSE");
+            }
+            else
+            {
+                [flashLight setTorchMode:AVCaptureTorchModeOn];
+                NSLog(@"setFlashLight TRUE");
+            }
+            [flashLight unlockForConfiguration];
+        }
+    }
+}
+
 -(void) setColorEffect:(CDVInvokedUrlCommand*)command {
         NSLog(@"setColorEffect");
         CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
