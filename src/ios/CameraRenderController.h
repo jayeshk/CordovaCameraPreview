@@ -29,5 +29,7 @@
 @property BOOL dragEnabled;
 @property BOOL tapToTakePicture;
 @property (nonatomic, assign) id delegate;
+@property (nonatomic,assign) int screenShotCount;
+@property (nonatomic,assign) int screenShotDispatchedCount;
 
 @end
