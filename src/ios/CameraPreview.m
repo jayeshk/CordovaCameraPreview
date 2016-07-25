@@ -64,24 +64,43 @@
 }
 
 - (void) stopCamera:(CDVInvokedUrlCommand*)command {
-        NSLog(@"stopCamera");
-        CDVPluginResult *pluginResult;
+    NSLog(@"stopCamera");
+    
+    if(self.cameraRenderController.screenShotDispatchedCount==self.cameraRenderController.screenShotCount){
+        [self doStopCamera:command];
+    }else{
+        [self.sessionManager.session stopRunning];
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+            [self stopCamera:command];
+        });
+    }
+}
 
-        if(self.sessionManager != nil) {
-                [self.cameraRenderController.view removeFromSuperview];
-                [self.cameraRenderController removeFromParentViewController];
-                self.cameraRenderController = nil;
-
-                [self.sessionManager.session stopRunning];
-                self.sessionManager = nil;
-
-                pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+- (void)doStopCamera:(CDVInvokedUrlCommand*)command{
+    CDVPluginResult *pluginResult;
+    if(self.sessionManager != nil) {
+        NSMutableArray* filePaths= [[NSMutableArray alloc]init];
+        
+        for(int t=0; t<= self.cameraRenderController.screenShotCount ; t++ ){
+            NSString* fileName = [NSString stringWithFormat:@"image_%i.png",t ];
+            [filePaths addObject:fileName];
         }
-        else {
-                pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera not started"];
-        }
-
-        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+        [self.cameraRenderController.view removeFromSuperview];
+        [self.cameraRenderController removeFromParentViewController];
+        self.cameraRenderController = nil;
+        
+        [self.sessionManager.session stopRunning];
+        self.sessionManager = nil;
+        
+        
+        pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:filePaths];
+        
+    }
+    else {
+        pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera not started"];
+    }
+    
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
 - (void) hideCamera:(CDVInvokedUrlCommand*)command {
