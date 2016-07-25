@@ -74,18 +74,18 @@
                         self.videoDeviceInput = videoDeviceInput;
                 }
 
-                AVCaptureStillImageOutput *stillImageOutput = [[AVCaptureStillImageOutput alloc] init];
-                if ([self.session canAddOutput:stillImageOutput]) {
-                        [self.session addOutput:stillImageOutput];
-                        [stillImageOutput setOutputSettings:@{AVVideoCodecKey : AVVideoCodecJPEG}];
-                        self.stillImageOutput = stillImageOutput;
-                }
+//                AVCaptureStillImageOutput *stillImageOutput = [[AVCaptureStillImageOutput alloc] init];
+//                if ([self.session canAddOutput:stillImageOutput]) {
+//                        [self.session addOutput:stillImageOutput];
+//                        [stillImageOutput setOutputSettings:@{AVVideoCodecKey : AVVideoCodecJPEG}];
+//                        self.stillImageOutput = stillImageOutput;
+//                }
 
                 AVCaptureVideoDataOutput *dataOutput = [[AVCaptureVideoDataOutput alloc] init];
                 if ([self.session canAddOutput:dataOutput]) {
                         self.dataOutput = dataOutput;
                         [dataOutput setAlwaysDiscardsLateVideoFrames:YES];
-                        [dataOutput setVideoSettings:[NSDictionary dictionaryWithObject:[NSNumber numberWithInt:kCVPixelFormatType_32BGRA] forKey:(id)kCVPixelBufferPixelFormatTypeKey]];
+                        [dataOutput setVideoSettings:[NSDictionary dictionaryWithObject:[NSNumber numberWithInt:kCVPixelFormatType_420YpCbCr8BiPlanarFullRange] forKey:(id)kCVPixelBufferPixelFormatTypeKey]];
 
                         [dataOutput setSampleBufferDelegate:self.delegate queue:self.sessionQueue];
 
@@ -93,6 +93,7 @@
                 }
 
                 [self updateOrientation:[self getCurrentOrientation]];
+                [self.session commitConfiguration];
         });
 }
 - (void) updateOrientation:(AVCaptureVideoOrientation)orientation
