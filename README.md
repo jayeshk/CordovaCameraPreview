@@ -40,8 +40,6 @@ Javascript:
 ```
 	var rect = {x: 50, y: 50, width: 250, height:500};
         var desiredFps = 60.0;
-        var directoryPath="private/var/mobile/Containers/Data/Application/B8731A4E-623B-4345-890B-D0D3C26DFAC6/tmp/";
-        var uniqueFileNamePrefix="123456abcd"
         cordova.plugins.camerapreview.startCamera(rect, "front",desiredFps);
 
 ```
@@ -87,7 +85,9 @@ cordova.plugins.camerapreview.hide();
 <info>Starts the recording of video, before that startCamera() must have been called.</info><br/>
 
 ```
-
+var directoryPath="private/var/mobile/Containers/Data/Application/B8731A4E-623B-4345-890B-D0D3C26DFAC6/tmp/";
+var uniqueFileNamePrefix="123456abcd"
+        
 cordova.plugins.camerapreview.startRecording(directoryPath,uniqueFileNamePrefix,startedRecordingCallBack,startRecordingFailedCallBack);
 
 
