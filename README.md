@@ -25,7 +25,7 @@ cordova plugin add https://github.com/sami4064/CordovaCameraPreview.git
 <p><b>Methods:</b></p>
 
 
-  <b>startCamera(rect, defaultCamera, desiredFps,directoryPath,uniqueFileNamePrefix)</b><br/>
+  <b>startCamera(rect, defaultCamera, desiredFps)</b><br/>
   <info>
   	Starts the camera preview instance.
   	<br/>
@@ -42,7 +42,7 @@ Javascript:
         var desiredFps = 60.0;
         var directoryPath="private/var/mobile/Containers/Data/Application/B8731A4E-623B-4345-890B-D0D3C26DFAC6/tmp/";
         var uniqueFileNamePrefix="123456abcd"
-        cordova.plugins.camerapreview.startCamera(rect, "front",desiredFps,directoryPath,uniqueFileNamePrefix);
+        cordova.plugins.camerapreview.startCamera(rect, "front",desiredFps);
 
 ```
 
@@ -88,7 +88,7 @@ cordova.plugins.camerapreview.hide();
 
 ```
 
-cordova.plugins.camerapreview.startRecording(startedRecordingCallBack,startRecordingFailedCallBack);
+cordova.plugins.camerapreview.startRecording(directoryPath,uniqueFileNamePrefix,startedRecordingCallBack,startRecordingFailedCallBack);
 
 
 function startRecordingFailedCallBack(message){
