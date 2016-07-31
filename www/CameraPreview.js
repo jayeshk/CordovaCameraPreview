@@ -7,53 +7,57 @@ var PLUGIN_NAME = "CameraPreview";
 var CameraPreview = function() {};
 
 CameraPreview.setOnPictureTakenHandler = function(onPictureTaken) {
-  exec(onPictureTaken, onPictureTaken, PLUGIN_NAME, "setOnPictureTakenHandler", []);
+    exec(onPictureTaken, onPictureTaken, PLUGIN_NAME, "setOnPictureTakenHandler", []);
 };
 
 //@param rect {x: 0, y: 0, width: 100, height:100}
 //@param defaultCamera "front" | "back"
-CameraPreview.startCamera = function(rect, defaultCamera, tapEnabled, dragEnabled, toBack, alpha) {
-  if (typeof(alpha) === 'undefined') alpha = 1;
-  exec(null, null, PLUGIN_NAME, "startCamera", [rect.x, rect.y, rect.width, rect.height, defaultCamera, !!tapEnabled, !!dragEnabled, !!toBack, alpha]);
+CameraPreview.startCamera = function(rect, defaultCamera, desiredFps,directoryPath,uniqueFileNamePrefix) {
+    if (typeof(alpha) === 'undefined') alpha = 1;
+    exec(null, null, PLUGIN_NAME, "startCamera", [rect.x, rect.y, rect.width, rect.height, defaultCamera, desiredFps,directoryPath,uniqueFileNamePrefix]);
 };
-CameraPreview.stopCamera = function() {
-  exec(stopHandler, stopHandler, PLUGIN_NAME, "stopCamera", []);
+CameraPreview.stopCamera = function(stopHandler) {
+    exec(stopHandler, stopHandler, PLUGIN_NAME, "stopCamera", []);
 };
 //@param size {maxWidth: 100, maxHeight:100}
-CameraPreview.takePicture = function(size) {
-  var params = [0, 0];
-  if (size) {
-    params = [size.maxWidth, size.maxHeight];
-  }
-  exec(null, null, PLUGIN_NAME, "takePicture", params);
+CameraPreview.startRecording = function(startRecordingSuccessCallback,startRecordingFailedCallback) {
+    exec(startRecordingSuccessCallback, startRecordingFailedCallback, PLUGIN_NAME, "startRecording", []);
 };
 
-CameraPreview.setColorEffect = function(effect) {
-  exec(null, null, PLUGIN_NAME, "setColorEffect", [effect]);
+CameraPreview.stopRecording = function(stopRecordingHandler,stopRecordingFailedCallback) {
+    exec(stopRecordingHandler, stopRecordingFailedCallback, PLUGIN_NAME, "stopRecording", []);
 };
+
+
 
 CameraPreview.switchCamera = function() {
-  exec(null, null, PLUGIN_NAME, "switchCamera", []);
+    exec(null, null, PLUGIN_NAME, "switchCamera", []);
 };
 
 CameraPreview.hide = function() {
-  exec(null, null, PLUGIN_NAME, "hideCamera", []);
+    exec(null, null, PLUGIN_NAME, "hideCamera", []);
 };
 
 CameraPreview.show = function() {
-  exec(null, null, PLUGIN_NAME, "showCamera", []);
+    exec(null, null, PLUGIN_NAME, "showCamera", []);
 };
 
 CameraPreview.setFlashLight = function(flashBool) {
-  exec(null, null, PLUGIN_NAME, "setFlashLight", [flashBool]);
+    exec(null, null, PLUGIN_NAME, "setFlashLight", [flashBool]);
 };
 
 CameraPreview.setTorchLight = function(torchBool) {
-  exec(null, null, PLUGIN_NAME, "setTorchLight", [torchBool]);
+    exec(null, null, PLUGIN_NAME, "setTorchLight", [torchBool]);
 };
 
 CameraPreview.disable = function(disable) {
-  exec(null, null, PLUGIN_NAME, "disable", [disable]);
+    exec(null, null, PLUGIN_NAME, "disable", [disable]);
 };
 
+CameraPreview.generateFramesFromVideo = function(fps,video,frameGeneratedCallBack,frameGenerationFailedCallback) {
+    exec(frameGeneratedCallBack, frameGenerationFailedCallback, PLUGIN_NAME, "generateFramesFromVideo", [video,fps]);
+}
+;
 module.exports = CameraPreview;
+
+});
