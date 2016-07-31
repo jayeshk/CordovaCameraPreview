@@ -12,16 +12,16 @@ CameraPreview.setOnPictureTakenHandler = function(onPictureTaken) {
 
 //@param rect {x: 0, y: 0, width: 100, height:100}
 //@param defaultCamera "front" | "back"
-CameraPreview.startCamera = function(rect, defaultCamera, desiredFps,directoryPath,uniqueFileNamePrefix) {
+CameraPreview.startCamera = function(rect, defaultCamera, desiredFps) {
     if (typeof(alpha) === 'undefined') alpha = 1;
-    exec(null, null, PLUGIN_NAME, "startCamera", [rect.x, rect.y, rect.width, rect.height, defaultCamera, desiredFps,directoryPath,uniqueFileNamePrefix]);
+    exec(null, null, PLUGIN_NAME, "startCamera", [rect.x, rect.y, rect.width, rect.height, defaultCamera, desiredFps]);
 };
 CameraPreview.stopCamera = function(stopHandler) {
     exec(stopHandler, stopHandler, PLUGIN_NAME, "stopCamera", []);
 };
 //@param size {maxWidth: 100, maxHeight:100}
-CameraPreview.startRecording = function(startRecordingSuccessCallback,startRecordingFailedCallback) {
-    exec(startRecordingSuccessCallback, startRecordingFailedCallback, PLUGIN_NAME, "startRecording", []);
+CameraPreview.startRecording = function(directoryPath,uniqueFileNamePrefix,startRecordingSuccessCallback,startRecordingFailedCallback) {
+    exec(startRecordingSuccessCallback, startRecordingFailedCallback, PLUGIN_NAME, "startRecording", [directoryPath,uniqueFileNamePrefix]);
 };
 
 CameraPreview.stopRecording = function(stopRecordingHandler,stopRecordingFailedCallback) {

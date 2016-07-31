@@ -24,24 +24,22 @@ static inline CGFloat RadiansToDegrees(CGFloat radians) {
         return;
     }
     
-    if (command.arguments.count > 7) {
+    if (command.arguments.count > 5) {
         CGFloat x = (CGFloat)[command.arguments[0] floatValue] + self.webView.frame.origin.x;
         CGFloat y = (CGFloat)[command.arguments[1] floatValue] + self.webView.frame.origin.y;
         CGFloat width = (CGFloat)[command.arguments[2] floatValue];
         CGFloat height = (CGFloat)[command.arguments[3] floatValue];
         NSString *defaultCamera = command.arguments[4];
         CGFloat desiredFPS = [command.arguments[5] floatValue];
-        NSString* directoryPath = command.arguments[6];
-        NSString* fileNamePrefix = command.arguments[7];
         CGRect bounds=CGRectMake(x, y, width, height);
         self.previewView=[[UIView alloc]initWithFrame:bounds];
-        self.fileNamePrefix=fileNamePrefix;
+        //self.fileNamePrefix=fileNamePrefix;
         self.bounds=bounds;
         NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
         
         NSString *documentsDirectory = [paths objectAtIndex:0];
         
-        self.directoryPath=directoryPath;
+        //self.directoryPath=directoryPath;
         [self.viewController.view addSubview:self.previewView];
         [self.viewController.view bringSubviewToFront:self.previewView];
         if ([defaultCamera isEqual: @"front"]) {
@@ -128,28 +126,38 @@ static inline CGFloat RadiansToDegrees(CGFloat radians) {
 - (void) startRecording:(CDVInvokedUrlCommand*)command {
     NSLog(@"startRecording");
     __block CDVPluginResult *pluginResult;
-    
-    if (self.sessionManager != NULL) {
-        // REC START
-        if (!self.sessionManager.isRecording) {
+    if(command.arguments.count >1){
+        NSString* directoryPath = command.arguments[0];
+        NSString* fileNamePrefix = command.arguments[1];
+        
+        self.directoryPath=directoryPath;
+        self.fileNamePrefix=fileNamePrefix;
+        if (self.sessionManager != NULL) {
+            // REC START
+            if (!self.sessionManager.isRecording) {
+                
+                
+                
+                [self.sessionManager startRecordingInDirectory:self.directoryPath AndFilePrefix:self.fileNamePrefix];//WithCallback:^{
+                _onVideoCapturingStartedHandlerId=command.callbackId;
+                //                    pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"Camera recording started"];
+                //                    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+                //}];
+            }
+            // Error callbacks
+            else {
+                pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera already recording"];
+                [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+            }
             
-            
-            
-            [self.sessionManager startRecordingInDirectory:self.directoryPath AndFilePrefix:self.fileNamePrefix];//WithCallback:^{
-            _onVideoCapturingStartedHandlerId=command.callbackId;
-            //                    pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"Camera recording started"];
-            //                    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-            //}];
-        }
-        // Error callbacks
-        else {
-            pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera already recording"];
+        } else {
+            pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera not started"];
             [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
         }
-        
-    } else {
-        pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera not started"];
+    }else{
+        pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Invalid arguments"];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+        
     }
 }
 
@@ -333,7 +341,7 @@ static inline CGFloat RadiansToDegrees(CGFloat radians) {
                                         {
                                             
                                             
-                                            NSString* filename= [NSString stringWithFormat:@"tmpImages/image_%@_%04d.png",self.fileNamePrefix,index];
+                                            NSString* filename= [NSString stringWithFormat:@"tmpImages/%@_%04d.png",self.fileNamePrefix,index];
                                             NSURL *fileURL = [NSURL fileURLWithPath:[self.directoryPath stringByAppendingPathComponent:filename]];
                                             
                                             [self writeSampleBuffer:sampleBuffer ofType:AVMediaTypeVideo orientation:orientation imageIndex:index fileURL:fileURL];
@@ -369,7 +377,7 @@ static inline CGFloat RadiansToDegrees(CGFloat radians) {
                                             }
                                         }else{
                                             NSError *error = nil;
-                                            NSString* filename= [NSString stringWithFormat:@"image_%@_%04lu.png",self.fileNamePrefix,(unsigned long)[filePathsRequired count]];
+                                            NSString* filename= [NSString stringWithFormat:@"%@_%04lu.png",self.fileNamePrefix,(unsigned long)[filePathsRequired count]];
                                             NSURL *fileURL = [NSURL fileURLWithPath:[self.directoryPath stringByAppendingPathComponent:filename]];
                                             NSURL *oldURL = [NSURL fileURLWithPath:filePath];
                                             [[NSFileManager defaultManager] moveItemAtURL:oldURL toURL:fileURL error:&error];
