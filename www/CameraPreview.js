@@ -54,8 +54,7 @@ CameraPreview.disable = function(disable) {
     exec(null, null, PLUGIN_NAME, "disable", [disable]);
 };
 
-CameraPreview.generateFramesFromVideo = function(fps,video,frameGeneratedCallBack,frameGenerationFailedCallback) {
+CameraPreview.generateFramesFromVideo = function(fps,video,directoryPath,uniqueFileNamePrefix,frameGeneratedCallBack,frameGenerationFailedCallback) {
     exec(frameGeneratedCallBack, frameGenerationFailedCallback, PLUGIN_NAME, "generateFramesFromVideo", [video,fps,directoryPath,uniqueFileNamePrefix]);
-}
-;
+};
 module.exports = CameraPreview;
