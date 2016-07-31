@@ -59,5 +59,3 @@ CameraPreview.generateFramesFromVideo = function(fps,video,frameGeneratedCallBac
 }
 ;
 module.exports = CameraPreview;
-
-});
