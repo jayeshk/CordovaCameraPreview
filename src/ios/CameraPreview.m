@@ -27,6 +27,7 @@ static inline CGFloat RadiansToDegrees(CGFloat radians) {
     if (command.arguments.count > 1) {
         NSString *defaultCamera = command.arguments[0];
         CGFloat desiredFPS = [command.arguments[1] floatValue];
+        self.desiredFPS=desiredFPS;
         CGRect bounds=self.viewController.view.frame;
         self.previewView=[[UIView alloc]initWithFrame:self.viewController.view.frame];
         //self.fileNamePrefix=fileNamePrefix;
@@ -67,9 +68,19 @@ static inline CGFloat RadiansToDegrees(CGFloat radians) {
     } else {
         pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Invalid number of parameters"];
     }
+    
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
+-(void)getFacing:(CDVInvokedUrlCommand*)command{
+    CDVPluginResult* result;
+    if(self.sessionManager){
+        result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:self.sessionManager.videoDevice.position==AVCaptureDevicePositionBack?@"environment":@"user"];
+    }else{
+        result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera not started yet"];
+    }
+    [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+}
 - (void) stopCamera:(CDVInvokedUrlCommand*)command {
     NSLog(@"stopCamera");
     if(self.sessionManager != nil){
@@ -124,8 +135,13 @@ static inline CGFloat RadiansToDegrees(CGFloat radians) {
     CDVPluginResult *pluginResult;
     
     if (self.sessionManager != nil) {
-        [self.sessionManager switchCamera];
-        pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+        if(self.sessionManager.isRecording){
+            pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera is recording currently"];
+        }else{
+            [self.sessionManager switchCamera];
+            [self.sessionManager switchFormatWithDesiredFPS:self.desiredFPS];
+            pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:self.sessionManager.videoDevice.position==AVCaptureDevicePositionBack?@"environment":@"user"];
+        }
     } else {
         pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera not started"];
     }
@@ -259,7 +275,6 @@ static inline CGFloat RadiansToDegrees(CGFloat radians) {
     
 }
 
-
 -(void)generateFramesFromVideo:(CDVInvokedUrlCommand*)command{
     if(!_fileWriter)_fileWriter= dispatch_queue_create("screenshots.filewriter.queue", DISPATCH_QUEUE_SERIAL);
     CDVPluginResult* result=nil;
@@ -305,20 +320,20 @@ static inline CGFloat RadiansToDegrees(CGFloat radians) {
                                     UIImageOrientation orientation = UIImageOrientationRight;
                                     switch ((int)videoAngleInDegree) {
                                         case 0:
-                                            orientation = UIImageOrientationRight;
-                                            break;
+                                        orientation = UIImageOrientationRight;
+                                        break;
                                         case 90:
-                                            orientation = UIImageOrientationUp;
-                                            break;
+                                        orientation = UIImageOrientationUp;
+                                        break;
                                         case 180:
-                                            orientation = UIImageOrientationLeft;
-                                            break;
+                                        orientation = UIImageOrientationLeft;
+                                        break;
                                         case -90:
-                                            orientation	= UIImageOrientationDown;
-                                            break;
+                                        orientation	= UIImageOrientationDown;
+                                        break;
                                         default:
-                                            orientation = UIImageOrientationRight;
-                                            break;
+                                        orientation = UIImageOrientationRight;
+                                        break;
                                     }
                                     
                                     NSError * error = nil;
@@ -326,7 +341,7 @@ static inline CGFloat RadiansToDegrees(CGFloat radians) {
                                     // _movieReader is a member variable
                                     AVAssetReader *movieReader = [[AVAssetReader alloc] initWithAsset:asset error:&error];
                                     if (error)
-                                        NSLog(@"_movieReader fail!\n");
+                                    NSLog(@"_movieReader fail!\n");
                                     
                                     NSString* key = (NSString*)kCVPixelBufferPixelFormatTypeKey;
                                     NSNumber* value = [NSNumber numberWithUnsignedInt:kCVPixelFormatType_32BGRA];
@@ -461,17 +476,17 @@ static inline CGFloat RadiansToDegrees(CGFloat radians) {
         switch (orientation) {
             case UIImageOrientationRight:
             case UIImageOrientationLeft:
-                rotation=0.0;
-                break;
+            rotation=0.0;
+            break;
             case UIImageOrientationUp:
-                rotation=-M_PI_2;
-                break;
+            rotation=-M_PI_2;
+            break;
             case UIImageOrientationDown:
-                rotation=M_PI_2;
-                break;
+            rotation=M_PI_2;
+            break;
             default:
-                rotation=0.0;
-                break;
+            rotation=0.0;
+            break;
         }
         //        //rotating to correct orientation
         image =[image imageByApplyingTransform:CGAffineTransformMakeRotation(rotation)];

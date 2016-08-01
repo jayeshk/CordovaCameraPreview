@@ -10,6 +10,7 @@
 
 - (void) startCamera:(CDVInvokedUrlCommand*)command;
 - (void) stopCamera:(CDVInvokedUrlCommand*)command;
+- (void) getFacing:(CDVInvokedUrlCommand*)command;
 - (void) showCamera:(CDVInvokedUrlCommand*)command;
 - (void) hideCamera:(CDVInvokedUrlCommand*)command;
 - (void) switchCamera:(CDVInvokedUrlCommand*)command;
@@ -28,6 +29,7 @@
 @property (nonatomic) NSString *onVideoCapturedHandlerId;
 @property (nonatomic) NSString *onVideoCapturingStartedHandlerId;
 @property (nonatomic) CGRect bounds;
+@property (nonatomic) float desiredFPS;
 @property (nonatomic) NSString* directoryPath;
 @property (nonatomic) NSString* fileNamePrefix;
 @property (nonatomic) dispatch_queue_t fileWriter;

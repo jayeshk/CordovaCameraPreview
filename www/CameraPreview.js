@@ -12,7 +12,7 @@ CameraPreview.setOnPictureTakenHandler = function(onPictureTaken) {
 
 //@param rect {x: 0, y: 0, width: 100, height:100}
 //@param defaultCamera "front" | "back"
-CameraPreview.startCamera = function( defaultCamera, desiredFps) {
+CameraPreview.startCamera = function(defaultCamera, desiredFps) {
     if (typeof(alpha) === 'undefined') alpha = 1;
     exec(null, null, PLUGIN_NAME, "startCamera", [defaultCamera, desiredFps]);
 };
@@ -27,7 +27,6 @@ CameraPreview.startRecording = function(directoryPath,uniqueFileNamePrefix,start
 CameraPreview.stopRecording = function(stopRecordingHandler,stopRecordingFailedCallback) {
     exec(stopRecordingHandler, stopRecordingFailedCallback, PLUGIN_NAME, "stopRecording", []);
 };
-
 
 CameraPreview.getFacing = function(cameraFacingCallback,cameraFacingErrorCallback) {
     exec(cameraFacingCallback, cameraFacingErrorCallback, PLUGIN_NAME, "getFacing", []);

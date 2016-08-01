@@ -10,7 +10,6 @@
 #import "TTMCaptureManager.h"
 #import <AVFoundation/AVFoundation.h>
 #import <math.h>
-
 @interface TTMCaptureManager ()
 <AVCaptureFileOutputRecordingDelegate, AVCaptureAudioDataOutputSampleBufferDelegate, AVCaptureVideoDataOutputSampleBufferDelegate>
 {
@@ -21,6 +20,7 @@
     AVCaptureVideoOrientation referenceOrientation;
     dispatch_queue_t movieWritingQueue;
     dispatch_queue_t screensWritingQueue;
+    dispatch_queue_t videoCaptureQueue;
     
     CMBufferQueueRef previewBufferQueue;
     BOOL recordingWillBeStarted;
@@ -72,7 +72,6 @@
         self.captureSession.sessionPreset = AVCaptureSessionPresetInputPriority;
         
         self.videoDevice = cameraType == CameraTypeFront ? [TTMCaptureManager frontCaptureDevice] : [TTMCaptureManager backCaptureDevice];
-        
         AVCaptureDeviceInput *videoIn = [AVCaptureDeviceInput deviceInputWithDevice:self.videoDevice error:&error];
         self.videoDeviceInput=videoIn;
         if (error) {
@@ -110,6 +109,8 @@
             [[self.previewLayer connection] setVideoMirrored:NO];
             
         }
+        movieWritingQueue = dispatch_queue_create("com.shu223.moviewriting", DISPATCH_QUEUE_SERIAL);
+        videoCaptureQueue = dispatch_queue_create("com.shu223.videocapture", NULL);
         
         switch (outputMode) {
             case OutputModeMovieFile:
@@ -127,8 +128,6 @@
                 
                 [videoDataOutput setVideoSettings:[NSDictionary dictionaryWithObject:[NSNumber numberWithInt:kCVPixelFormatType_32BGRA] forKey:(id)kCVPixelBufferPixelFormatTypeKey]];
                 
-                movieWritingQueue = dispatch_queue_create("com.shu223.moviewriting", DISPATCH_QUEUE_SERIAL);
-                dispatch_queue_t videoCaptureQueue = dispatch_queue_create("com.shu223.videocapture", NULL);
                 [videoDataOutput setAlwaysDiscardsLateVideoFrames:YES];
                 [videoDataOutput setSampleBufferDelegate:self queue:videoCaptureQueue];
                 
@@ -192,19 +191,19 @@
     
     switch (orientation) {
         case AVCaptureVideoOrientationPortrait:
-            angle = 0.0;
-            break;
+        angle = 0.0;
+        break;
         case AVCaptureVideoOrientationPortraitUpsideDown:
-            angle = M_PI;
-            break;
+        angle = M_PI;
+        break;
         case AVCaptureVideoOrientationLandscapeRight:
-            angle = -M_PI_2;
-            break;
+        angle = -M_PI_2;
+        break;
         case AVCaptureVideoOrientationLandscapeLeft:
-            angle = M_PI_2;
-            break;
+        angle = M_PI_2;
+        break;
         default:
-            break;
+        break;
     }
     
     return angle;
@@ -234,9 +233,9 @@
     
     // Assume that lower-than-SD resolutions are intended for streaming, and use a lower bitrate
     if ( numPixels < (640 * 480) )
-        bitsPerPixel = 4.05; // This bitrate matches the quality produced by AVCaptureSessionPresetMedium or Low.
+    bitsPerPixel = 4.05; // This bitrate matches the quality produced by AVCaptureSessionPresetMedium or Low.
     else
-        bitsPerPixel = 11.4; // This bitrate matches the quality produced by AVCaptureSessionPresetHigh.
+    bitsPerPixel = 11.4; // This bitrate matches the quality produced by AVCaptureSessionPresetHigh.
     
     bitsPerSecond = numPixels * bitsPerPixel;
     
@@ -459,13 +458,13 @@
     
     if (currentOutputMode == OutputModeMovieFile) {
         
-       // int fileNamePostfix = 0;
+        // int fileNamePostfix = 0;
         NSString *filePath = nil;
         
-
-            filePath =[NSString stringWithFormat:@"/%@/%@-%@.mp4", documentsDirectory, dateTimePrefix,prefix];
         
-        self.fileURL = [NSURL URLWithString:[@"file://" stringByAppendingString:filePath]];
+        filePath =[NSString stringWithFormat:@"%@/%@.mp4", documentsDirectory,prefix];
+        
+        self.fileURL = [NSURL URLWithString:filePath];
         
         [self.movieFileOutput startRecordingToOutputFileURL:self.fileURL recordingDelegate:self];
         _isRecording=YES;
@@ -482,9 +481,9 @@
             
             NSString *filePath = nil;
             
-            filePath =[NSString stringWithFormat:@"/%@/%@-%@.mp4", documentsDirectory, dateTimePrefix,prefix];
- 
-            self.fileURL = [NSURL URLWithString:[@"file://" stringByAppendingString:filePath]];
+            filePath =[NSString stringWithFormat:@"%@/%@.MOV", documentsDirectory, prefix];
+            
+            self.fileURL = [NSURL URLWithString:filePath];
             
             NSError *error;
             self.assetWriter = [[AVAssetWriter alloc] initWithURL:self.fileURL
@@ -618,7 +617,7 @@
                 
                 // Write audio data to file
                 if (readyToRecordAudio && readyToRecordVideo)
-                    [self writeSampleBuffer:sampleBuffer ofType:AVMediaTypeAudio];
+                [self writeSampleBuffer:sampleBuffer ofType:AVMediaTypeAudio];
             }
             
             BOOL isReadyToRecord = (readyToRecordAudio && readyToRecordVideo);
@@ -630,6 +629,52 @@
         }
         CFRelease(sampleBuffer);
     });
+}
+-(void)switchCamera{
+    if (self.videoDevice.position == AVCaptureDevicePositionFront) {
+        self.defaultCamera = CameraTypeBack;
+    } else {
+        self.defaultCamera = CameraTypeFront;
+    }
+    
+    //dispatch_async(videoCaptureQueue, ^{
+    NSError *error = nil;
+    //if([self.captureSession isRunning])[self.captureSession stopRunning];
+    [self.captureSession beginConfiguration];
+    
+    if (self.videoDeviceInput != nil) {
+        [self.captureSession removeInput:[self videoDeviceInput]];
+        [self setVideoDeviceInput:nil];
+    }
+    
+    AVCaptureDevice *videoDevice =self.defaultCamera == CameraTypeFront ? [TTMCaptureManager frontCaptureDevice] : [TTMCaptureManager backCaptureDevice];
+    if ([videoDevice hasFlash] && [videoDevice isFlashModeSupported:AVCaptureFlashModeAuto]) {
+        if ([videoDevice lockForConfiguration:&error]) {
+            [videoDevice setFlashMode:AVCaptureFlashModeAuto];
+            [videoDevice unlockForConfiguration];
+        } else {
+            NSLog(@"%@", error);
+        }
+    }
+    
+    AVCaptureDeviceInput *videoDeviceInput = [AVCaptureDeviceInput deviceInputWithDevice:videoDevice error:&error];
+    
+    if (error) {
+        NSLog(@"%@", error);
+    }
+    
+    if ([self.captureSession canAddInput:videoDeviceInput]) {
+        [self.captureSession addInput:videoDeviceInput];
+        [self setVideoDeviceInput:videoDeviceInput];
+        self.videoDevice=videoDevice;
+    }
+    
+    //[self updateOrientation:[self getCurrentOrientation]];
+    [self.captureSession commitConfiguration];
+    self.previewLayer.session=self.captureSession;
+    //[self.captureSession stopRunning];
+    //});
+    
 }
 
 @end

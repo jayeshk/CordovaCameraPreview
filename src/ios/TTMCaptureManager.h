@@ -54,7 +54,7 @@ typedef NS_ENUM(NSUInteger, OutputMode) {
 - (instancetype)initWithPreviewView:(UIView *)previewView
                 preferredCameraType:(CameraType)cameraType
                          outputMode:(OutputMode)outputMode
-                             previewBounds:(CGRect)bounds;
+                      previewBounds:(CGRect)bounds;
 - (void)toggleContentsGravity;
 - (void)resetFormat;
 - (void)switchFormatWithDesiredFPS:(CGFloat)desiredFPS;
