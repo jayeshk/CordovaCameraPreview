@@ -250,13 +250,15 @@ static inline CGFloat RadiansToDegrees(CGFloat radians) {
 }
 
 -(void)generateFramesFromVideo:(CDVInvokedUrlCommand*)command{
+    if(!_fileWriter)_fileWriter= dispatch_queue_create("screenshots.filewriter.queue", DISPATCH_QUEUE_SERIAL);
     CDVPluginResult* result=nil;
     if(command.arguments.count >3){
         NSString* filePath=command.arguments[0];
         AVURLAsset * asset = [AVURLAsset URLAssetWithURL:[NSURL URLWithString:filePath ] options:nil];
         
         float fps=[command.arguments[1] floatValue];
-        NSString* directoryPath=command.arguments[2];
+        NSString* directoryPathWithFileProtocol=command.arguments[2];
+        NSString* directoryPath= [directoryPathWithFileProtocol stringByReplacingOccurrencesOfString:@"file://" withString:@""];
         NSString* fileNamePrefix=command.arguments[3];
         
         float durationInSeconds = CMTimeGetSeconds(asset.duration);
@@ -274,7 +276,6 @@ static inline CGFloat RadiansToDegrees(CGFloat radians) {
         [asset loadValuesAsynchronouslyForKeys:[NSArray arrayWithObject:@"tracks"] completionHandler:
          ^{
              dispatch_queue_t writerQueue= dispatch_queue_create("screenshots.writer.queue", DISPATCH_QUEUE_SERIAL);
-             if(!_fileWriter)_fileWriter= dispatch_queue_create("screenshots.filewriter.queue", DISPATCH_QUEUE_SERIAL);
              
              dispatch_async(writerQueue,
                             ^{
@@ -324,15 +325,14 @@ static inline CGFloat RadiansToDegrees(CGFloat radians) {
                                                             outputSettings:videoSettings]];
                                     [movieReader startReading];
                                     int index=0;
-                                    
-                                    if (![[NSFileManager defaultManager] fileExistsAtPath:[directoryPath stringByAppendingString:@"tmpImages/"]]){
-                                        [[NSFileManager defaultManager] createDirectoryAtPath:[directoryPath stringByAppendingString:@"tmpImages/"] withIntermediateDirectories:NO attributes:nil error:&error]; //Create folder
+                                    if (![[NSFileManager defaultManager] fileExistsAtPath:[directoryPath stringByAppendingString:@"tmpImages"]]){
+                                        [[NSFileManager defaultManager] createDirectoryAtPath:[directoryPath stringByAppendingString:@"tmpImages"] withIntermediateDirectories:NO attributes:nil error:&error]; //Create folder
                                     }else{
-                                        [[NSFileManager defaultManager] removeItemAtPath:[directoryPath stringByAppendingString:@"tmpImages/"] error:&error];
-                                        [[NSFileManager defaultManager] createDirectoryAtPath:[directoryPath stringByAppendingString:@"tmpImages/"] withIntermediateDirectories:NO attributes:nil error:&error]; //Create folder
+                                        [[NSFileManager defaultManager] removeItemAtPath:[directoryPath stringByAppendingString:@"tmpImages"] error:&error];
+                                        [[NSFileManager defaultManager] createDirectoryAtPath:[directoryPath stringByAppendingString:@"tmpImages"] withIntermediateDirectories:NO attributes:nil error:&error]; //Create folder
                                     }
                                     if(error){
-                                        NSLog(@"tmpImages directory %@ creation error: %@",[directoryPath stringByAppendingString:@"tmpImages/"] ,error.localizedDescription);
+                                        NSLog(@"tmpImages directory %@ creation error: %@",[directoryPath stringByAppendingString:@"tmpImages"] ,error.localizedDescription);
                                     }
                                     while ([movieReader status] == AVAssetReaderStatusReading)
                                     {
@@ -345,7 +345,10 @@ static inline CGFloat RadiansToDegrees(CGFloat radians) {
                                             
                                             
                                             NSString* filename= [NSString stringWithFormat:@"tmpImages/%@_%04d.png",fileNamePrefix,index];
-                                            NSURL *fileURL = [NSURL fileURLWithPath:[directoryPath stringByAppendingPathComponent:filename]];
+                                            NSString* filePath=[directoryPath stringByAppendingPathComponent:filename];
+                                            filePath=[filePath stringByReplacingOccurrencesOfString:@"file:"
+                                                                                         withString:@""];
+                                            NSURL *fileURL = [NSURL fileURLWithPath:filePath];
                                             
                                             [self writeSampleBuffer:sampleBuffer ofType:AVMediaTypeVideo orientation:orientation imageIndex:index fileURL:fileURL];
                                             index++;
@@ -376,20 +379,26 @@ static inline CGFloat RadiansToDegrees(CGFloat radians) {
                                             NSError* error;
                                             BOOL success = [[NSFileManager defaultManager] removeItemAtPath:filePath error:&error];
                                             if (!success) {
+                                                CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error.localizedDescription];
+                                                [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
                                                 NSLog(@"Error removing file at path: %@", error.localizedDescription);
+                                                return ;
                                             }
                                         }else{
                                             NSError *error = nil;
                                             NSString* filename= [NSString stringWithFormat:@"%@_%04lu.png",fileNamePrefix,(unsigned long)[filePathsRequired count]];
-                                            NSURL *fileURL = [NSURL fileURLWithPath:[directoryPath stringByAppendingPathComponent:filename]];
-                                            NSURL *oldURL = [NSURL fileURLWithPath:filePath];
-                                            [[NSFileManager defaultManager] moveItemAtURL:oldURL toURL:fileURL error:&error];
+                                            NSString *fileURL =[directoryPath stringByAppendingPathComponent:filename];
+                                            NSString *oldURL = filePath;
+                                            [[NSFileManager defaultManager] moveItemAtPath:oldURL toPath:fileURL error:&error];
                                             if (error) {
+                                                CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error.localizedDescription];
+                                                [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
                                                 NSLog(@"Error writing to file at path: %@", error.localizedDescription);
+                                                return ;
                                             }
-                                            NSLog(@"%@",fileURL.absoluteString);
+                                            NSLog(@"%@",fileURL);
                                             
-                                            [filePathsRequired addObject:fileURL.absoluteString];
+                                            [filePathsRequired addObject:fileURL];
                                             i++;
                                         }
                                         t++;
@@ -400,7 +409,7 @@ static inline CGFloat RadiansToDegrees(CGFloat radians) {
                                     
                                 }else{
                                     CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Video Track not found in video"];
-                                    [self.commandDelegate sendPluginResult:result callbackId:self.onVideoCapturedHandlerId];
+                                    [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
                                     
                                 }
                             });
@@ -409,7 +418,7 @@ static inline CGFloat RadiansToDegrees(CGFloat radians) {
         
     }else{
         result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"invalid arguments for generating frames"];
-        [self.commandDelegate sendPluginResult:result callbackId:self.onVideoCapturedHandlerId];
+        [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
         
     }
 }
