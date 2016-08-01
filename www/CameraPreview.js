@@ -12,9 +12,9 @@ CameraPreview.setOnPictureTakenHandler = function(onPictureTaken) {
 
 //@param rect {x: 0, y: 0, width: 100, height:100}
 //@param defaultCamera "front" | "back"
-CameraPreview.startCamera = function(rect, defaultCamera, desiredFps) {
+CameraPreview.startCamera = function( defaultCamera, desiredFps) {
     if (typeof(alpha) === 'undefined') alpha = 1;
-    exec(null, null, PLUGIN_NAME, "startCamera", [rect.x, rect.y, rect.width, rect.height, defaultCamera, desiredFps]);
+    exec(null, null, PLUGIN_NAME, "startCamera", [defaultCamera, desiredFps]);
 };
 CameraPreview.stopCamera = function(stopHandler) {
     exec(stopHandler, stopHandler, PLUGIN_NAME, "stopCamera", []);

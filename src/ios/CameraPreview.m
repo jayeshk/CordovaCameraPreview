@@ -24,15 +24,11 @@ static inline CGFloat RadiansToDegrees(CGFloat radians) {
         return;
     }
     
-    if (command.arguments.count > 5) {
-        CGFloat x = (CGFloat)[command.arguments[0] floatValue] + self.webView.frame.origin.x;
-        CGFloat y = (CGFloat)[command.arguments[1] floatValue] + self.webView.frame.origin.y;
-        CGFloat width = (CGFloat)[command.arguments[2] floatValue];
-        CGFloat height = (CGFloat)[command.arguments[3] floatValue];
-        NSString *defaultCamera = command.arguments[4];
-        CGFloat desiredFPS = [command.arguments[5] floatValue];
-        CGRect bounds=CGRectMake(x, y, width, height);
-        self.previewView=[[UIView alloc]initWithFrame:bounds];
+    if (command.arguments.count > 1) {
+        NSString *defaultCamera = command.arguments[0];
+        CGFloat desiredFPS = [command.arguments[1] floatValue];
+        CGRect bounds=self.viewController.view.frame;
+        self.previewView=[[UIView alloc]initWithFrame:self.viewController.view.frame];
         //self.fileNamePrefix=fileNamePrefix;
         self.bounds=bounds;
         NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
@@ -40,8 +36,23 @@ static inline CGFloat RadiansToDegrees(CGFloat radians) {
         NSString *documentsDirectory = [paths objectAtIndex:0];
         
         //self.directoryPath=directoryPath;
-        [self.viewController.view addSubview:self.previewView];
-        [self.viewController.view bringSubviewToFront:self.previewView];
+        [self.webView.superview addSubview:self.previewView];
+        [self.webView.superview bringSubviewToFront:self.previewView];
+        [self.webView setOpaque: false];
+        [self.webView setBackgroundColor: [UIColor clearColor]];
+        [self.webView.scrollView setOpaque:false];
+        [self.webView.scrollView setBackgroundColor:[UIColor clearColor]];
+        
+        for(UIView* childView in self.webView.subviews){
+            [childView setOpaque:false];
+            [childView setBackgroundColor:[UIColor clearColor]];
+            //            for(UIView* childsChildView in childView.subviews){
+            //                [childsChildView setOpaque:false];
+            //                [childsChildView setBackgroundColor:[UIColor clearColor]];
+            //
+            //            }
+        }
+        [self.webView.superview bringSubviewToFront:self.webView];
         if ([defaultCamera isEqual: @"front"]) {
             self.sessionManager= [[TTMCaptureManager alloc]initWithPreviewView:self.previewView preferredCameraType:CameraTypeFront outputMode:OutputModeMovieFile previewBounds:CGRectMake(0, 0, bounds.size.width, bounds.size.height)];
         } else {
@@ -56,7 +67,6 @@ static inline CGFloat RadiansToDegrees(CGFloat radians) {
     } else {
         pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Invalid number of parameters"];
     }
-    
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
