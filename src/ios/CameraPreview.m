@@ -252,7 +252,7 @@ static inline CGFloat RadiansToDegrees(CGFloat radians) {
 -(void)generateFramesFromVideo:(CDVInvokedUrlCommand*)command{
     if(!_fileWriter)_fileWriter= dispatch_queue_create("screenshots.filewriter.queue", DISPATCH_QUEUE_SERIAL);
     CDVPluginResult* result=nil;
-    if(command.arguments.count >3){
+    if(command.arguments.count >5){
         NSString* filePath=command.arguments[0];
         AVURLAsset * asset = [AVURLAsset URLAssetWithURL:[NSURL URLWithString:filePath ] options:nil];
         
@@ -260,6 +260,10 @@ static inline CGFloat RadiansToDegrees(CGFloat radians) {
         NSString* directoryPathWithFileProtocol=command.arguments[2];
         NSString* directoryPath= [directoryPathWithFileProtocol stringByReplacingOccurrencesOfString:@"file://" withString:@""];
         NSString* fileNamePrefix=command.arguments[3];
+        CGFloat width = (CGFloat)[command.arguments[4] floatValue];
+        CGFloat height = (CGFloat)[command.arguments[5] floatValue];
+        CGFloat quality = (CGFloat)[command.arguments[6] floatValue];
+        
         
         float durationInSeconds = CMTimeGetSeconds(asset.duration);
         NSUInteger requiredNumberOfFrames=(durationInSeconds*fps);
@@ -344,13 +348,13 @@ static inline CGFloat RadiansToDegrees(CGFloat radians) {
                                         {
                                             
                                             
-                                            NSString* filename= [NSString stringWithFormat:@"tmpImages/%@_%04d.png",fileNamePrefix,index];
+                                            NSString* filename= [NSString stringWithFormat:@"tmpImages/%@_%04d.jpeg",fileNamePrefix,index];
                                             NSString* filePath=[directoryPath stringByAppendingPathComponent:filename];
                                             filePath=[filePath stringByReplacingOccurrencesOfString:@"file:"
                                                                                          withString:@""];
                                             NSURL *fileURL = [NSURL fileURLWithPath:filePath];
                                             
-                                            [self writeSampleBuffer:sampleBuffer ofType:AVMediaTypeVideo orientation:orientation imageIndex:index fileURL:fileURL];
+                                            [self writeSampleBuffer:sampleBuffer ofType:AVMediaTypeVideo orientation:orientation imageIndex:index fileURL:fileURL width:width height:height quality:quality];
                                             index++;
                                             [filePaths addObject:fileURL.path];
                                             NSLog(@"%@",fileURL.absoluteString);
@@ -386,7 +390,7 @@ static inline CGFloat RadiansToDegrees(CGFloat radians) {
                                             }
                                         }else{
                                             NSError *error = nil;
-                                            NSString* filename= [NSString stringWithFormat:@"%@_%04lu.png",fileNamePrefix,(unsigned long)[filePathsRequired count]];
+                                            NSString* filename= [NSString stringWithFormat:@"%@_%04lu.jpeg",fileNamePrefix,(unsigned long)[filePathsRequired count]];
                                             NSString *fileURL =[directoryPath stringByAppendingPathComponent:filename];
                                             NSString *oldURL = filePath;
                                             [[NSFileManager defaultManager] moveItemAtPath:oldURL toPath:fileURL error:&error];
@@ -436,31 +440,31 @@ static inline CGFloat RadiansToDegrees(CGFloat radians) {
     return shifted/magnitude;
 }
 
-- (void) writeSampleBuffer:(CMSampleBufferRef)sampleBuffer ofType:(NSString *)mediaType orientation:(UIImageOrientation)orientation imageIndex:(int)index fileURL:(NSURL*)fileURL
+- (void) writeSampleBuffer:(CMSampleBufferRef)sampleBuffer ofType:(NSString *)mediaType orientation:(UIImageOrientation)orientation imageIndex:(int)index fileURL:(NSURL*)fileURL width:(float)width height:(float)height quality:(float)quality
 {
     
     @autoreleasepool {
         
         CVPixelBufferRef pixelBuffer = (CVPixelBufferRef)CMSampleBufferGetImageBuffer(sampleBuffer);
         CIImage *image = [CIImage imageWithCVPixelBuffer:pixelBuffer];
-        CGFloat screenScale = [[UIScreen mainScreen] scale];
+        //CGFloat screenScale = [[UIScreen mainScreen] scale];
         CGRect bounds ;
         long double rotation=0.0;
         switch (orientation) {
             case UIImageOrientationRight:
             case UIImageOrientationLeft:
-                bounds= CGRectMake(self.bounds.origin.x*screenScale, self.bounds.origin.y*screenScale, self.bounds.size.width*screenScale, self.bounds.size.height*screenScale);
+                bounds= CGRectMake(0, 0, width, height);
                 rotation=0.0;
                 break;
             case UIImageOrientationUp:
                 rotation=-M_PI_2;
                 
-                bounds= CGRectMake(self.bounds.origin.y*screenScale, self.bounds.origin.x*screenScale, self.bounds.size.height*screenScale, self.bounds.size.width*screenScale);
+                bounds= CGRectMake(0, 0, height, width);
                 break;
             case UIImageOrientationDown:
                 rotation=M_PI_2;
                 
-                bounds= CGRectMake(self.bounds.origin.y*screenScale, self.bounds.origin.x*screenScale, self.bounds.size.height*screenScale, self.bounds.size.width*screenScale);
+                bounds= CGRectMake(0, 0, height, width);
                 break;
             default:
                 rotation=0.0;
@@ -522,7 +526,8 @@ static inline CGFloat RadiansToDegrees(CGFloat radians) {
         UIImage* uiImage = [UIImage imageWithCGImage:cgiimage];
         
         CGImageRelease(cgiimage);
-        [UIImagePNGRepresentation(uiImage) writeToURL:fileURL atomically:YES];
+        [UIImageJPEGRepresentation(uiImage, 0.9) writeToURL:fileURL atomically:YES];
+        //[UIImagePNGRepresentation(uiImage) writeToURL:fileURL atomically:YES];
         NSLog(@"image url: %@",fileURL.absoluteString);
         
     }
