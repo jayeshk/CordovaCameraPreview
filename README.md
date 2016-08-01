@@ -133,7 +133,10 @@ function stopRecordingFailedCallback(message){
 ```
 var fps=30.0;
 var videoFilePath = [some video file path];
-cordova.plugins.camerapreview.generateFramesFromVideo(fps,videoFilePath,generatingFramesSuccessCallBack,generatingFramesErrorCallBack);
+var directoryPath="private/var/mobile/Containers/Data/Application/B8731A4E-623B-4345-890B-D0D3C26DFAC6/tmp/";
+var uniqueFileNamePrefix="123456abcd"
+var quality = 0.9;
+cordova.plugins.camerapreview.generateFramesFromVideo(fps,videoFilePath,directoryPath,uniqueFileNamePrefix,quality,generatingFramesSuccessCallBack,generatingFramesErrorCallBack);
                                      
 
 
