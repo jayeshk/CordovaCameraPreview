@@ -249,10 +249,11 @@ static inline CGFloat RadiansToDegrees(CGFloat radians) {
     
 }
 
+
 -(void)generateFramesFromVideo:(CDVInvokedUrlCommand*)command{
     if(!_fileWriter)_fileWriter= dispatch_queue_create("screenshots.filewriter.queue", DISPATCH_QUEUE_SERIAL);
     CDVPluginResult* result=nil;
-    if(command.arguments.count >5){
+    if(command.arguments.count >3){
         NSString* filePath=command.arguments[0];
         AVURLAsset * asset = [AVURLAsset URLAssetWithURL:[NSURL URLWithString:filePath ] options:nil];
         
@@ -260,9 +261,7 @@ static inline CGFloat RadiansToDegrees(CGFloat radians) {
         NSString* directoryPathWithFileProtocol=command.arguments[2];
         NSString* directoryPath= [directoryPathWithFileProtocol stringByReplacingOccurrencesOfString:@"file://" withString:@""];
         NSString* fileNamePrefix=command.arguments[3];
-        CGFloat width = (CGFloat)[command.arguments[4] floatValue];
-        CGFloat height = (CGFloat)[command.arguments[5] floatValue];
-        CGFloat quality = (CGFloat)[command.arguments[6] floatValue];
+        CGFloat quality = (CGFloat)[command.arguments[4] floatValue];
         
         
         float durationInSeconds = CMTimeGetSeconds(asset.duration);
@@ -354,7 +353,7 @@ static inline CGFloat RadiansToDegrees(CGFloat radians) {
                                                                                          withString:@""];
                                             NSURL *fileURL = [NSURL fileURLWithPath:filePath];
                                             
-                                            [self writeSampleBuffer:sampleBuffer ofType:AVMediaTypeVideo orientation:orientation imageIndex:index fileURL:fileURL width:width height:height quality:quality];
+                                            [self writeSampleBuffer:sampleBuffer ofType:AVMediaTypeVideo orientation:orientation imageIndex:index fileURL:fileURL quality:quality];
                                             index++;
                                             [filePaths addObject:fileURL.path];
                                             NSLog(@"%@",fileURL.absoluteString);
@@ -440,7 +439,7 @@ static inline CGFloat RadiansToDegrees(CGFloat radians) {
     return shifted/magnitude;
 }
 
-- (void) writeSampleBuffer:(CMSampleBufferRef)sampleBuffer ofType:(NSString *)mediaType orientation:(UIImageOrientation)orientation imageIndex:(int)index fileURL:(NSURL*)fileURL width:(float)width height:(float)height quality:(float)quality
+- (void) writeSampleBuffer:(CMSampleBufferRef)sampleBuffer ofType:(NSString *)mediaType orientation:(UIImageOrientation)orientation imageIndex:(int)index fileURL:(NSURL*)fileURL  quality:(float)quality
 {
     
     @autoreleasepool {
@@ -448,67 +447,25 @@ static inline CGFloat RadiansToDegrees(CGFloat radians) {
         CVPixelBufferRef pixelBuffer = (CVPixelBufferRef)CMSampleBufferGetImageBuffer(sampleBuffer);
         CIImage *image = [CIImage imageWithCVPixelBuffer:pixelBuffer];
         //CGFloat screenScale = [[UIScreen mainScreen] scale];
-        CGRect bounds ;
         long double rotation=0.0;
         switch (orientation) {
             case UIImageOrientationRight:
             case UIImageOrientationLeft:
-                bounds= CGRectMake(0, 0, width, height);
                 rotation=0.0;
                 break;
             case UIImageOrientationUp:
                 rotation=-M_PI_2;
-                
-                bounds= CGRectMake(0, 0, height, width);
                 break;
             case UIImageOrientationDown:
                 rotation=M_PI_2;
-                
-                bounds= CGRectMake(0, 0, height, width);
                 break;
             default:
                 rotation=0.0;
                 break;
         }
+        //        //rotating to correct orientation
+        image =[image imageByApplyingTransform:CGAffineTransformMakeRotation(rotation)];
         
-        CGFloat scaleHeight = bounds.size.height/image.extent.size.height;
-        CGFloat scaleWidth = bounds.size.width/image.extent.size.width;
-        
-        NSLog(@"image width:%f height:%f",image.extent.size.width,image.extent.size.height);
-        CGFloat scale, x, y;
-        if (scaleHeight < scaleWidth) {
-            scale = scaleWidth;
-            x = 0;
-            y = ((scale * image.extent.size.height) - bounds.size.height ) / 2;
-        } else {
-            scale = scaleHeight;
-            x = ((scale * image.extent.size.width) - bounds.size.width )/ 2;
-            y = 0;
-        }
-        CIImage *transformedImage=nil;
-        //transform and scale
-        CGAffineTransform xscale = CGAffineTransformMakeScale(scale, scale);
-        CGAffineTransform xlate = CGAffineTransformMakeTranslation(-x, -y);
-        CGAffineTransform xform =  CGAffineTransformConcat(xscale, xlate);
-        
-        CIFilter *centerFilter = [CIFilter filterWithName:@"CIAffineTransform"  keysAndValues:
-                                  kCIInputImageKey, image,
-                                  kCIInputTransformKey, [NSValue valueWithBytes:&xform objCType:@encode(CGAffineTransform)],
-                                  nil];
-        
-        transformedImage = [centerFilter outputImage];
-        NSLog(@"transformedImage x:%f y:%f width:%f height:%f",transformedImage.extent.origin.x,transformedImage.extent.origin.y,transformedImage.extent.size.width,transformedImage.extent.size.height);
-        
-        
-        CIImage *croppedImage=nil;
-        // crop
-        croppedImage=[transformedImage imageByCroppingToRect:CGRectMake((transformedImage.extent.size.width-bounds.size.width)/2.0 +transformedImage.extent.origin.x,
-                                                                        (transformedImage.extent.size.width-bounds.size.width)/2.0 +transformedImage.extent.origin.y,
-                                                                        bounds.size.width, bounds.size.height)];
-        //rotating to correct orientation
-        croppedImage =[croppedImage imageByApplyingTransform:CGAffineTransformMakeRotation(rotation)];
-        
-        NSLog(@"croppedImage width:%f height:%f",croppedImage.extent.size.width,croppedImage.extent.size.height);
         
         
         CIContext *context = [CIContext contextWithOptions:nil];
@@ -516,13 +473,7 @@ static inline CGFloat RadiansToDegrees(CGFloat radians) {
         CGImageRef cgiimage;
         
         
-        
-        if(croppedImage)
-            cgiimage = [context createCGImage:croppedImage fromRect:croppedImage.extent];
-        else if(transformedImage)
-            cgiimage = [context createCGImage:transformedImage fromRect:transformedImage.extent];
-        else
-            cgiimage = [context createCGImage:image fromRect:image.extent];
+        cgiimage = [context createCGImage:image fromRect:image.extent];
         UIImage* uiImage = [UIImage imageWithCGImage:cgiimage];
         
         CGImageRelease(cgiimage);
