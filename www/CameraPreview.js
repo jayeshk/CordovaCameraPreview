@@ -29,6 +29,10 @@ CameraPreview.stopRecording = function(stopRecordingHandler,stopRecordingFailedC
 };
 
 
+CameraPreview.getFacing = function(cameraFacingCallback,cameraFacingErrorCallback) {
+    exec(cameraFacingCallback, cameraFacingErrorCallback, PLUGIN_NAME, "getFacing", []);
+};
+
 
 CameraPreview.switchCamera = function() {
     exec(null, null, PLUGIN_NAME, "switchCamera", []);

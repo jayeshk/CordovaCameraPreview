@@ -71,7 +71,8 @@
         self.captureSession = [[AVCaptureSession alloc] init];
         self.captureSession.sessionPreset = AVCaptureSessionPresetInputPriority;
         
-        self.videoDevice = cameraType == CameraTypeFront ? [TTMCaptureManager frontCaptureDevice] : [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
+        self.videoDevice = cameraType == CameraTypeFront ? [TTMCaptureManager frontCaptureDevice] : [TTMCaptureManager backCaptureDevice];
+        
         AVCaptureDeviceInput *videoIn = [AVCaptureDeviceInput deviceInputWithDevice:self.videoDevice error:&error];
         self.videoDeviceInput=videoIn;
         if (error) {
@@ -164,6 +165,19 @@
     for (AVCaptureDevice *device in videoDevices)
     {
         if (device.position == AVCaptureDevicePositionFront)
+        {
+            return device;
+        }
+    }
+    
+    return [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
+}
++ (AVCaptureDevice *)backCaptureDevice {
+    
+    NSArray *videoDevices = [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo];
+    for (AVCaptureDevice *device in videoDevices)
+    {
+        if (device.position == AVCaptureDevicePositionBack)
         {
             return device;
         }
