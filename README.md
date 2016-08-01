@@ -25,7 +25,7 @@ cordova plugin add https://github.com/sami4064/CordovaCameraPreview.git
 <p><b>Methods:</b></p>
 
 
-  <b>startCamera(rect, defaultCamera, desiredFps)</b><br/>
+  <b>startCamera( defaultCamera, desiredFps)</b><br/>
   <info>
   	Starts the camera preview instance.
   	<br/>
@@ -38,9 +38,8 @@ cordova plugin add https://github.com/sami4064/CordovaCameraPreview.git
 Javascript:
 
 ```
-	var rect = {x: 50, y: 50, width: 250, height:500};
         var desiredFps = 60.0;
-        cordova.plugins.camerapreview.startCamera(rect, "front",desiredFps);
+        cordova.plugins.camerapreview.startCamera("front",desiredFps);
 
 ```
 
