@@ -278,7 +278,7 @@ static inline CGFloat RadiansToDegrees(CGFloat radians) {
 -(void)generateFramesFromVideo:(CDVInvokedUrlCommand*)command{
     if(!_fileWriter)_fileWriter= dispatch_queue_create("screenshots.filewriter.queue", DISPATCH_QUEUE_SERIAL);
     CDVPluginResult* result=nil;
-    if(command.arguments.count >3){
+    if(command.arguments.count >4){
         NSString* filePath=command.arguments[0];
         AVURLAsset * asset = [AVURLAsset URLAssetWithURL:[NSURL URLWithString:filePath ] options:nil];
         
@@ -288,7 +288,8 @@ static inline CGFloat RadiansToDegrees(CGFloat radians) {
         NSString* fileNamePrefix=command.arguments[3];
         CGFloat quality = (CGFloat)[command.arguments[4] floatValue];
         
-        
+        float width=[command.arguments[5] floatValue];
+        //__block float width=0;
         float durationInSeconds = CMTimeGetSeconds(asset.duration);
         NSUInteger requiredNumberOfFrames=(durationInSeconds*fps);
         
@@ -296,6 +297,20 @@ static inline CGFloat RadiansToDegrees(CGFloat radians) {
         
         
         NSLog(@" file to load is: %@",filePath);
+        
+        NSDate *today = [NSDate date];
+        
+        //Create the dateformatter object
+        NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
+        
+        //Set the required date format
+        [dateFormatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
+        
+        //Get the string date
+        NSString *dateString = [dateFormatter stringFromDate:today];
+        
+        //Display on the console
+        NSLog(@"start time %@",dateString);
         
         
         NSMutableArray* filePaths=[[NSMutableArray alloc]init];
@@ -309,10 +324,14 @@ static inline CGFloat RadiansToDegrees(CGFloat radians) {
                             ^{
                                 AVAssetTrack * videoTrack = nil;
                                 NSArray * tracks = [asset tracksWithMediaType:AVMediaTypeVideo];
+                                
                                 if ([tracks count] == 1)
                                 {
                                     videoTrack = [tracks objectAtIndex:0];
+                                    //                                    float aspectRatio= [videoTrack naturalSize].width/[videoTrack naturalSize].height;
+                                    //                                    width = aspectRatio*height;
                                     
+                                    CGFloat scale = width/[videoTrack naturalSize].width;
                                     
                                     CGAffineTransform txf       = [videoTrack preferredTransform];
                                     CGFloat videoAngleInDegree  = RadiansToDegrees(atan2(txf.b, txf.a));
@@ -353,15 +372,23 @@ static inline CGFloat RadiansToDegrees(CGFloat radians) {
                                                             outputSettings:videoSettings]];
                                     [movieReader startReading];
                                     int index=0;
-                                    if (![[NSFileManager defaultManager] fileExistsAtPath:[directoryPath stringByAppendingString:@"tmpImages"]]){
-                                        [[NSFileManager defaultManager] createDirectoryAtPath:[directoryPath stringByAppendingString:@"tmpImages"] withIntermediateDirectories:NO attributes:nil error:&error]; //Create folder
-                                    }else{
-                                        [[NSFileManager defaultManager] removeItemAtPath:[directoryPath stringByAppendingString:@"tmpImages"] error:&error];
-                                        [[NSFileManager defaultManager] createDirectoryAtPath:[directoryPath stringByAppendingString:@"tmpImages"] withIntermediateDirectories:NO attributes:nil error:&error]; //Create folder
+                                    long double rotation=0.0;
+                                    switch (orientation) {
+                                        case UIImageOrientationRight:
+                                        case UIImageOrientationLeft:
+                                        rotation=0.0;
+                                        break;
+                                        case UIImageOrientationUp:
+                                        rotation=-M_PI_2;
+                                        break;
+                                        case UIImageOrientationDown:
+                                        rotation=M_PI_2;
+                                        break;
+                                        default:
+                                        rotation=0.0;
+                                        break;
                                     }
-                                    if(error){
-                                        NSLog(@"tmpImages directory %@ creation error: %@",[directoryPath stringByAppendingString:@"tmpImages"] ,error.localizedDescription);
-                                    }
+                                    
                                     while ([movieReader status] == AVAssetReaderStatusReading)
                                     {
                                         AVAssetReaderOutput * output = [movieReader.outputs objectAtIndex:0];
@@ -372,16 +399,47 @@ static inline CGFloat RadiansToDegrees(CGFloat radians) {
                                         {
                                             
                                             
-                                            NSString* filename= [NSString stringWithFormat:@"tmpImages/%@_%04d.jpeg",fileNamePrefix,index];
-                                            NSString* filePath=[directoryPath stringByAppendingPathComponent:filename];
-                                            filePath=[filePath stringByReplacingOccurrencesOfString:@"file:"
-                                                                                         withString:@""];
-                                            NSURL *fileURL = [NSURL fileURLWithPath:filePath];
+                                            //                                            NSString* filename= [NSString stringWithFormat:@"tmpImages/%@_%04d.jpeg",fileNamePrefix,index];
+                                            //                                            NSString* filePath=[directoryPath stringByAppendingPathComponent:filename];
+                                            //                                            filePath=[filePath stringByReplacingOccurrencesOfString:@"file:"
+                                            //                                                                                    withString:@""];
+                                            //NSURL *fileURL = [NSURL fileURLWithPath:filePath];
                                             
-                                            [self writeSampleBuffer:sampleBuffer ofType:AVMediaTypeVideo orientation:orientation imageIndex:index fileURL:fileURL quality:quality];
-                                            index++;
-                                            [filePaths addObject:fileURL.path];
-                                            NSLog(@"%@",fileURL.absoluteString);
+                                            @autoreleasepool {
+                                                
+                                                
+                                                CVPixelBufferRef pixelBuffer = (CVPixelBufferRef)CMSampleBufferGetImageBuffer(sampleBuffer);
+                                                CIImage *image = [CIImage imageWithCVPixelBuffer:pixelBuffer];
+                                                //CGFloat screenScale = [[UIScreen mainScreen] scale];
+                                                //        //rotating to correct orientation
+                                                CIImage* rotatedImage =[image imageByApplyingTransform:CGAffineTransformMakeRotation(rotation)];
+                                                
+                                                
+                                                
+                                                CIFilter *resizeFilter = [CIFilter filterWithName:@"CILanczosScaleTransform"];
+                                                [resizeFilter setValue:rotatedImage forKey:@"inputImage"];
+                                                [resizeFilter setValue:[NSNumber numberWithFloat:1.0f] forKey:@"inputAspectRatio"];
+                                                [resizeFilter setValue:[NSNumber numberWithFloat:scale] forKey:@"inputScale"];
+                                                
+                                                CIImage* croppedImage = resizeFilter.outputImage;
+                                                
+                                                
+                                                CIContext *context = [CIContext contextWithOptions:nil];
+                                                
+                                                CGImageRef cgiimage;
+                                                
+                                                
+                                                cgiimage = [context createCGImage:croppedImage fromRect:croppedImage.extent];
+                                                UIImage* uiImage = [UIImage imageWithCGImage:cgiimage];
+                                                
+                                                CGImageRelease(cgiimage);
+                                                
+                                                //[self writeSampleBuffer:sampleBuffer ofType:AVMediaTypeVideo orientation:orientation imageIndex:index fileURL:fileURL quality:quality];
+                                                index++;
+                                                
+                                                [filePaths addObject:[UIImageJPEGRepresentation(uiImage, quality) base64EncodedStringWithOptions:0]];
+                                            }
+                                            
                                             CFRelease(sampleBuffer);
                                         }
                                         
@@ -402,35 +460,54 @@ static inline CGFloat RadiansToDegrees(CGFloat radians) {
                                     int i=0;
                                     
                                     for(NSString* filePath in filePaths){
-                                        NSLog(@" modulus %f",fmod(t,nthFrameToIgnore));
+                                        //NSLog(@" modulus %f",fmod(t,nthFrameToIgnore));
                                         if( (int)(step*i) != t){
-                                            NSError* error;
-                                            BOOL success = [[NSFileManager defaultManager] removeItemAtPath:filePath error:&error];
-                                            if (!success) {
-                                                CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error.localizedDescription];
-                                                [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
-                                                NSLog(@"Error removing file at path: %@", error.localizedDescription);
-                                                return ;
-                                            }
+                                            
+                                            //                                            NSError* error;
+                                            //                                            BOOL success = [[NSFileManager defaultManager] removeItemAtPath:filePath error:&error];
+                                            //                                            if (!success) {
+                                            //                                                CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error.localizedDescription];
+                                            //                                                [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+                                            //                                                NSLog(@"Error removing file at path: %@", error.localizedDescription);
+                                            //                                                return ;
+                                            //                                            }
                                         }else{
                                             NSError *error = nil;
-                                            NSString* filename= [NSString stringWithFormat:@"%@_%04lu.jpeg",fileNamePrefix,(unsigned long)[filePathsRequired count]];
-                                            NSString *fileURL =[directoryPath stringByAppendingPathComponent:filename];
-                                            NSString *oldURL = filePath;
-                                            [[NSFileManager defaultManager] moveItemAtPath:oldURL toPath:fileURL error:&error];
+                                            //                                            NSString* filename= [NSString stringWithFormat:@"%@_%04lu.jpeg",fileNamePrefix,(unsigned long)[filePathsRequired count]];
+                                            //                                            NSString *fileURL =[directoryPath stringByAppendingPathComponent:filename];
+                                            //                                            NSString *oldURL = filePath;
+                                            //                                            [[NSFileManager defaultManager] moveItemAtPath:oldURL toPath:fileURL error:&error];
                                             if (error) {
                                                 CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error.localizedDescription];
                                                 [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
                                                 NSLog(@"Error writing to file at path: %@", error.localizedDescription);
                                                 return ;
                                             }
-                                            NSLog(@"%@",fileURL);
+                                            //                                            NSLog(@"%@",fileURL);
                                             
-                                            [filePathsRequired addObject:fileURL];
+                                            [filePathsRequired addObject:filePath];
                                             i++;
                                         }
                                         t++;
                                     }
+                                    [filePaths removeAllObjects];
+                                    NSLog(@" file to load is: %@",filePath);
+                                    
+                                    NSDate *today = [NSDate date];
+                                    
+                                    //Create the dateformatter object
+                                    NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
+                                    
+                                    //Set the required date format
+                                    [dateFormatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
+                                    
+                                    //Get the string date
+                                    NSString *dateString = [dateFormatter stringFromDate:today];
+                                    
+                                    //Display on the console
+                                    NSLog(@"stop time %@",dateString);
+                                    
+                                    
                                     CDVPluginResult* result= [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:filePathsRequired];
                                     [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
                                     
@@ -450,6 +527,8 @@ static inline CGFloat RadiansToDegrees(CGFloat radians) {
         
     }
 }
+
+
 
 -(float) round:(float)num toSignificantFigures:(int)n {
     if(num == 0) {
