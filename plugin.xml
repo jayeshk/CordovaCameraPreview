@@ -24,6 +24,14 @@
             </feature>
         </config-file>
 
+        <config-file platform="ios" target="*-Info.plist" parent="NSCameraUsageDescription">
+            <string>Camera access needed.</string>
+        </config-file>
+
+        <config-file platform="ios" target="*-Info.plist" parent="NSMicrophoneUsageDescription">
+            <string>Microsoft access needed.</string>
+        </config-file>
+
         <header-file src="src/ios/CameraPreview.h" />
         <source-file src="src/ios/CameraPreview.m" />
 

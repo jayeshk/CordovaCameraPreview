@@ -53,7 +53,7 @@ static inline CGFloat RadiansToDegrees(CGFloat radians) {
             //
             //            }
         }
-        [self.webView.superview bringSubviewToFront:self.webView];
+      //  [self.webView.superview bringSubviewToFront:self.webView];
         if ([defaultCamera isEqual: @"user"]) {
             self.sessionManager= [[TTMCaptureManager alloc]initWithPreviewView:self.previewView preferredCameraType:CameraTypeFront outputMode:OutputModeMovieFile previewBounds:CGRectMake(0, 0, bounds.size.width, bounds.size.height)];
         } else {
