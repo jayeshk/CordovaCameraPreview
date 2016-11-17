@@ -5,6 +5,7 @@
 #import <AVFoundation/AVFoundation.h>
 #import "CameraPreview.h"
 #import <math.h>
+#import "MainViewController.h"
 
 @implementation CameraPreview
 
@@ -13,6 +14,17 @@ static inline CGFloat RadiansToDegrees(CGFloat radians) {
 };
 
 #define DEGREES_TO_RADIANS(x) (M_PI * (x) / 180.0)
+
+- (UIWebView *)internalWebView
+{
+    //temp fix to find out webview alternate of self.webView
+    MainViewController *vc = self.viewController;
+    UIWebView *targetWebView = vc.webViewEngine.engineWebView;
+    targetWebView.backgroundColor = [UIColor clearColor];
+    targetWebView.opaque = false;
+    return targetWebView;
+}
+
 
 - (void) startCamera:(CDVInvokedUrlCommand*)command {
     
@@ -32,19 +44,19 @@ static inline CGFloat RadiansToDegrees(CGFloat radians) {
         self.previewView=[[UIView alloc]initWithFrame:self.viewController.view.frame];
         //self.fileNamePrefix=fileNamePrefix;
         self.bounds=bounds;
-        NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
         
-        NSString *documentsDirectory = [paths objectAtIndex:0];
+        //NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+        
+        //NSString *documentsDirectory = [paths objectAtIndex:0];
         
         //self.directoryPath=directoryPath;
-        [self.webView.superview addSubview:self.previewView];
-        [self.webView.superview bringSubviewToFront:self.previewView];
-        [self.webView setOpaque: false];
-        [self.webView setBackgroundColor: [UIColor clearColor]];
-        [self.webView.scrollView setOpaque:false];
-        [self.webView.scrollView setBackgroundColor:[UIColor clearColor]];
+        [self.internalWebView.superview addSubview:self.previewView];
+        [self.internalWebView.superview bringSubviewToFront:self.previewView];
+
+        //[self.webView.scrollView setOpaque:false];
+        //[self.webView.scrollView setBackgroundColor:[UIColor clearColor]];
         
-        for(UIView* childView in self.webView.subviews){
+        for(UIView* childView in self.internalWebView.subviews){
             [childView setOpaque:false];
             [childView setBackgroundColor:[UIColor clearColor]];
             //            for(UIView* childsChildView in childView.subviews){
@@ -53,7 +65,9 @@ static inline CGFloat RadiansToDegrees(CGFloat radians) {
             //
             //            }
         }
-      //  [self.webView.superview bringSubviewToFront:self.webView];
+        
+        [self.internalWebView reload];
+        [self.internalWebView.superview bringSubviewToFront:self.webView];
         if ([defaultCamera isEqual: @"user"]) {
             self.sessionManager= [[TTMCaptureManager alloc]initWithPreviewView:self.previewView preferredCameraType:CameraTypeFront outputMode:OutputModeMovieFile previewBounds:CGRectMake(0, 0, bounds.size.width, bounds.size.height)];
         } else {

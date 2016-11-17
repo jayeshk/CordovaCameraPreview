@@ -29,7 +29,11 @@
         </config-file>
 
         <config-file platform="ios" target="*-Info.plist" parent="NSMicrophoneUsageDescription">
-            <string>Microsoft access needed.</string>
+            <string>Microphone access needed.</string>
+        </config-file>
+        
+        <config-file platform="ios" target="*-Info.plist" parent="NSPhotoLibraryUsageDescription">
+            <string>Photo Library access needed.</string>
         </config-file>
 
         <header-file src="src/ios/CameraPreview.h" />
