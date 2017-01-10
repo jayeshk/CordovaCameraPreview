@@ -21,6 +21,11 @@
 - (void) invokeTakePicture:(CGFloat) maxWidth withHeight:(CGFloat) maxHeight;
 - (void) invokeTakePicture;
 
+- (void) processFramesFromVideo1:(CDVInvokedUrlCommand*) command;
+- (void) processFramesFromVideo2:(CDVInvokedUrlCommand*) command;
+
+@property (strong, nonatomic) NSString *processFrameCallbackId;
+
 @property (nonatomic) TTMCaptureManager *sessionManager;
 @property (nonatomic) UIView* previewView;
 //@property (nonatomic) CameraRenderController *cameraRenderController;

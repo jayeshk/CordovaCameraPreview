@@ -1,6 +1,6 @@
 var argscheck = require('cordova/argscheck'),
-  utils = require('cordova/utils'),
-  exec = require('cordova/exec');
+utils = require('cordova/utils'),
+exec = require('cordova/exec');
 
 var PLUGIN_NAME = "CameraPreview";
 
@@ -60,5 +60,14 @@ CameraPreview.disable = function(disable) {
 CameraPreview.generateFramesFromVideo = function(fps,video,directoryPath,uniqueFileNamePrefix,quality,width,frameGeneratedCallBack,frameGenerationFailedCallback) {
     exec(frameGeneratedCallBack, frameGenerationFailedCallback, PLUGIN_NAME, "generateFramesFromVideo", [video,fps,directoryPath,uniqueFileNamePrefix,quality,width]);
 };
+
+CameraPreview.processFramesFromVideo1 = function(fps,video,directoryPath,uniqueFileNamePrefix,quality,width,frameGeneratedCallBack,frameGenerationFailedCallback) {
+ exec(frameGeneratedCallBack, frameGenerationFailedCallback, PLUGIN_NAME, "processFramesFromVideo1", [video,fps,directoryPath,uniqueFileNamePrefix,quality,width]);
+};
+
+CameraPreview.processFramesFromVideo2 = function(fps,video,directoryPath,uniqueFileNamePrefix,quality,width,frameGeneratedCallBack,frameGenerationFailedCallback) {
+ exec(frameGeneratedCallBack, frameGenerationFailedCallback, PLUGIN_NAME, "processFramesFromVideo2", [video,fps,directoryPath,uniqueFileNamePrefix,quality,width]);
+};
+
 
 module.exports = CameraPreview;

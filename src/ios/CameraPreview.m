@@ -293,13 +293,20 @@ static inline CGFloat RadiansToDegrees(CGFloat radians) {
     if(!_fileWriter)_fileWriter= dispatch_queue_create("screenshots.filewriter.queue", DISPATCH_QUEUE_SERIAL);
     CDVPluginResult* result=nil;
     if(command.arguments.count >4){
-        NSString* filePath=command.arguments[0];
+        
+        NSString* filePath = @"assets-library://asset/asset.mp4?id=DDC78714-BECB-41A6-96FA-84C78B17E322&ext=mp4";//command.arguments[0];
+        
+        
         AVURLAsset * asset = [AVURLAsset URLAssetWithURL:[NSURL URLWithString:filePath ] options:nil];
         
         float fps=[command.arguments[1] floatValue];
-        NSString* directoryPathWithFileProtocol=command.arguments[2];
-        NSString* directoryPath= [directoryPathWithFileProtocol stringByReplacingOccurrencesOfString:@"file://" withString:@""];
-        NSString* fileNamePrefix=command.arguments[3];
+        
+        //NSString* directoryPathWithFileProtocol = command.arguments[2];
+
+        NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+        NSString *directoryPathWithFileProtocol = [paths objectAtIndex:0];
+       
+        
         CGFloat quality = (CGFloat)[command.arguments[4] floatValue];
         
         float width=[command.arguments[5] floatValue];
@@ -521,7 +528,7 @@ static inline CGFloat RadiansToDegrees(CGFloat radians) {
                                     //Display on the console
                                     NSLog(@"stop time %@",dateString);
                                     
-                                    
+                                    NSLog(@" filePathsRequired = %@ ", filePathsRequired);
                                     CDVPluginResult* result= [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:filePathsRequired];
                                     [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
                                     
@@ -542,6 +549,283 @@ static inline CGFloat RadiansToDegrees(CGFloat radians) {
     }
 }
 
+- (void)processFramesFromVideo2:(CDVInvokedUrlCommand*)command
+{
+    if(!_fileWriter)_fileWriter= dispatch_queue_create("screenshots.filewriter.queue", DISPATCH_QUEUE_SERIAL);
+    
+    CDVPluginResult* result=nil;
+    
+    if(command.arguments.count >4)
+    {
+        NSString* filePath = command.arguments[0];
+        
+        AVURLAsset * asset = [AVURLAsset URLAssetWithURL:[NSURL URLWithString:filePath ] options:nil];
+        
+        float fps = [command.arguments[1] floatValue];
+        
+        CGFloat quality = (CGFloat)[command.arguments[4] floatValue];
+        float width=[command.arguments[5] floatValue];
+        float durationInSeconds = CMTimeGetSeconds(asset.duration);
+        NSUInteger requiredNumberOfFrames=(durationInSeconds*fps);
+        NSLog(@" file to load is: %@",filePath);
+        
+        NSDate *today = [NSDate date];
+        NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
+        [dateFormatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
+        NSString *dateString = [dateFormatter stringFromDate:today];
+        NSLog(@"start time %@",dateString);
+        
+        
+        NSMutableArray* filePaths=[[NSMutableArray alloc]init];
+        
+        [asset loadValuesAsynchronouslyForKeys:[NSArray arrayWithObject:@"tracks"] completionHandler:
+         ^{
+             dispatch_queue_t writerQueue= dispatch_queue_create("screenshots.writer.queue", DISPATCH_QUEUE_SERIAL);
+             
+             dispatch_async(writerQueue,
+                            ^{
+                                AVAssetTrack * videoTrack = nil;
+                                NSArray * tracks = [asset tracksWithMediaType:AVMediaTypeVideo];
+                                
+                                if ([tracks count] == 1)
+                                {
+                                    videoTrack = [tracks objectAtIndex:0];
+                                    
+                                    CGFloat scale = width/[videoTrack naturalSize].width;
+                                    CGAffineTransform txf       = [videoTrack preferredTransform];
+                                    CGFloat videoAngleInDegree  = RadiansToDegrees(atan2(txf.b, txf.a));
+                                    UIImageOrientation orientation = UIImageOrientationRight;
+                                    switch ((int)videoAngleInDegree) {
+                                        case 0:
+                                            orientation = UIImageOrientationRight;
+                                            break;
+                                        case 90:
+                                            orientation = UIImageOrientationUp;
+                                            break;
+                                        case 180:
+                                            orientation = UIImageOrientationLeft;
+                                            break;
+                                        case -90:
+                                            orientation	= UIImageOrientationDown;
+                                            break;
+                                        default:
+                                            orientation = UIImageOrientationRight;
+                                            break;
+                                    }
+                                    
+                                    NSError * error = nil;
+                                    
+                                    AVAssetReader *movieReader = [[AVAssetReader alloc] initWithAsset:asset error:&error];
+                                    if (error)
+                                        NSLog(@"_movieReader fail!\n");
+                                    
+                                    NSString* key = (NSString*)kCVPixelBufferPixelFormatTypeKey;
+                                    NSNumber* value = [NSNumber numberWithUnsignedInt:kCVPixelFormatType_32BGRA];
+                                    NSDictionary* videoSettings =
+                                    [NSDictionary dictionaryWithObject:value forKey:key];
+                                    [movieReader addOutput:[AVAssetReaderTrackOutput
+                                                            assetReaderTrackOutputWithTrack:videoTrack
+                                                            outputSettings:videoSettings]];
+                                    [movieReader startReading];
+                                    int index=0;
+                                    long double rotation=0.0;
+                                    switch (orientation) {
+                                        case UIImageOrientationRight:
+                                        case UIImageOrientationLeft:
+                                            rotation=0.0;
+                                            break;
+                                        case UIImageOrientationUp:
+                                            rotation=-M_PI_2;
+                                            break;
+                                        case UIImageOrientationDown:
+                                            rotation=M_PI_2;
+                                            break;
+                                        default:
+                                            rotation=0.0;
+                                            break;
+                                    }
+                                    
+                                    NSInteger batchSize = 100;
+                                    NSInteger currentBatch = 0;
+                                    
+                                    while ([movieReader status] == AVAssetReaderStatusReading)
+                                    {
+                                        AVAssetReaderOutput * output = [movieReader.outputs objectAtIndex:0];
+                                        CMSampleBufferRef sampleBuffer = [output copyNextSampleBuffer];
+                                        if (sampleBuffer)
+                                        {
+                                            @autoreleasepool {
+                                                CVPixelBufferRef pixelBuffer = (CVPixelBufferRef)CMSampleBufferGetImageBuffer(sampleBuffer);
+                                                CIImage *image = [CIImage imageWithCVPixelBuffer:pixelBuffer];
+                                                CIImage* rotatedImage =[image imageByApplyingTransform:CGAffineTransformMakeRotation(rotation)];
+                                                
+                                                CIFilter *resizeFilter = [CIFilter filterWithName:@"CILanczosScaleTransform"];
+                                                [resizeFilter setValue:rotatedImage forKey:@"inputImage"];
+                                                [resizeFilter setValue:[NSNumber numberWithFloat:1.0f] forKey:@"inputAspectRatio"];
+                                                [resizeFilter setValue:[NSNumber numberWithFloat:scale] forKey:@"inputScale"];
+                                                
+                                                CIImage* croppedImage = resizeFilter.outputImage;
+                                                CIContext *context = [CIContext contextWithOptions:nil];
+                                                CGImageRef cgiimage;
+                                                cgiimage = [context createCGImage:croppedImage fromRect:croppedImage.extent];
+                                                UIImage* uiImage = [UIImage imageWithCGImage:cgiimage];
+                                                
+                                                CGImageRelease(cgiimage);
+                                                
+                                                index++;
+                                                
+                                                NSData *imageData = UIImageJPEGRepresentation(uiImage, quality);
+                                                
+                                                NSString *processedFrame = [imageData base64EncodedStringWithOptions:0];
+                                                [filePaths addObject:processedFrame];
+                                                
+                                                currentBatch++;
+                                                
+                                                if(currentBatch >= 10)
+                                                {
+                                                   
+                                                    if(imageData != nil)
+                                                    {
+                                                        CDVPluginResult* result= [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:filePaths];
+                                                        [result setKeepCallbackAsBool:true];
+                                                        [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+                                                    }
+                                                    
+                                                    [filePaths removeAllObjects];
+                                                    currentBatch = 0;
+                                                    imageData = nil;
+                                                }
+                                                
+                                            }
+                                            
+                                            CFRelease(sampleBuffer);
+                                        }
+                                        
+                                    }
+                                    
+                                    NSUInteger framesInVideo=[filePaths count];
+                                    NSUInteger numberOfFramesToBeIgnore = framesInVideo-requiredNumberOfFrames;
+                                    
+                                    NSMutableArray* filePathsRequired = [[NSMutableArray alloc]init];
+                                    int t = 0;
+                                    float step =(framesInVideo-1)/(requiredNumberOfFrames-1);
+                                    
+                                    int i = 0;
+                                    
+                                    for(NSString* filePath in filePaths)
+                                    {
+                                        if( (int)(step*i) != t)
+                                        {
+                                        }
+                                        else
+                                        {
+                                            NSError *error = nil;
+                                            if (error) {
+                                                CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error.localizedDescription];
+                                                [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+                                                NSLog(@"Error writing to file at path: %@", error.localizedDescription);
+                                                return ;
+                                            }
+                                            [filePathsRequired addObject:filePath];
+                                            i++;
+                                        }
+                                        t++;
+                                    }
+                                    [filePaths removeAllObjects];
+                                    NSLog(@" file to load is: %@",filePath);
+                                    
+                                    NSDate *today = [NSDate date];
+                                    NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
+                                    [dateFormatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
+                                    NSString *dateString = [dateFormatter stringFromDate:today];
+                                    NSLog(@"stop time %@",dateString);
+                                    
+                                    NSLog(@" filePathsRequired = %@ ", filePathsRequired);
+                                    CDVPluginResult* result= [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:filePathsRequired];
+                                    [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+                                }else{
+                                    CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Video Track not found in video"];
+                                    [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+                                    
+                                }
+                            });
+         }];
+        
+        
+    }else{
+        result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"invalid arguments for generating frames"];
+        [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+        
+    }
+
+}
+
+- (void)processFramesFromVideo1:(CDVInvokedUrlCommand*)command
+{
+    NSString* filePath = command.arguments[0];
+    
+    NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
+    [dateFormatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
+    NSString *dateString = [dateFormatter stringFromDate:[NSDate date]];
+    NSLog(@"Start Time  = %@",dateString);
+    
+    
+    float FPS = [command.arguments[1] floatValue];
+    
+    AVURLAsset * asset = [AVURLAsset URLAssetWithURL:[NSURL URLWithString:filePath ] options:nil];
+    AVAssetImageGenerator *generator = [[AVAssetImageGenerator alloc] initWithAsset:asset];
+    generator.requestedTimeToleranceAfter =  kCMTimeZero;
+    generator.requestedTimeToleranceBefore =  kCMTimeZero;
+    
+    NSLog(@"Asset TIME %f * %f = %f",  CMTimeGetSeconds(asset.duration), FPS, CMTimeGetSeconds(asset.duration) *  FPS );
+    
+    NSMutableArray *times = [NSMutableArray new];
+    
+    for (Float64 i = 0; i < CMTimeGetSeconds(asset.duration) *  FPS ; i++){
+        @autoreleasepool {
+            CMTime time = CMTimeMake(i, FPS);
+            NSError *err;
+            CMTime actualTime;
+            
+            NSValue *value = [NSValue valueWithCMTime:time];
+            
+            [generator generateCGImagesAsynchronouslyForTimes:@[value] completionHandler:^(CMTime requestedTime, CGImageRef  _Nullable image, CMTime actualTime, AVAssetImageGeneratorResult result, NSError * _Nullable error) {
+                
+                if (image != nil)
+                {
+                    UIImage *generatedImage = [[UIImage alloc] initWithCGImage:image];
+                    
+                    NSData *imageData = UIImageJPEGRepresentation(generatedImage, 1.0);
+                    CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArrayBuffer:imageData];
+                    [pluginResult setKeepCallbackAsBool:true];
+                    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+                }
+            }];
+
+            
+           // CGImageRef image = [generator copyCGImageAtTime:time actualTime:&actualTime error:&err];
+           // UIImage *generatedImage = [[UIImage alloc] initWithCGImage:image];
+            //NSLog(@"Generated image = %f", i);
+           // NSData *imageData = UIImageJPEGRepresentation(generatedImage, 1.0);
+            
+            //CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArrayBuffer:imageData];
+           // [result setKeepCallbackAsBool:true];
+           // [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+            
+            //CGImageRelease(image);
+        }
+    }
+    
+    
+    
+    
+    NSLog(@"Stop Time %@ = ", [dateFormatter stringFromDate:[NSDate date]]);
+    
+  //  CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"finished processing frames."];
+  //  [result setKeepCallbackAsBool:false];
+   // [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+    
+}
 
 
 -(float) round:(float)num toSignificantFigures:(int)n {
