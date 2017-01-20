@@ -69,5 +69,13 @@ CameraPreview.processFramesFromVideo2 = function(fps,video,directoryPath,uniqueF
  exec(frameGeneratedCallBack, frameGenerationFailedCallback, PLUGIN_NAME, "processFramesFromVideo2", [video,fps,directoryPath,uniqueFileNamePrefix,quality,width]);
 };
 
+CameraPreview.extractAudio = function(videoPath, outputPath,successCallback,failCallback) {
+ exec(successCallback, failCallback, PLUGIN_NAME, "extractAudio", [videoPath,outputPath]);
+};
+
+CameraPreview.composeFrames = function(frames, audioPath,outputPath,successCallback,failCallback) {
+ exec(successCallback, failCallback, PLUGIN_NAME, "composeFrames", [frames,audioPath, outputPath]);
+};
+
 
 module.exports = CameraPreview;

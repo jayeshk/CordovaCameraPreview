@@ -24,7 +24,12 @@
 - (void) processFramesFromVideo1:(CDVInvokedUrlCommand*) command;
 - (void) processFramesFromVideo2:(CDVInvokedUrlCommand*) command;
 
+- (void) extractAudio:(CDVInvokedUrlCommand*) command;
+- (void) composeFrames:(CDVInvokedUrlCommand*) command;
+
+
 @property (strong, nonatomic) NSString *processFrameCallbackId;
+@property (strong, nonatomic) NSString *extractAudioCallbackId;
 
 @property (nonatomic) TTMCaptureManager *sessionManager;
 @property (nonatomic) UIView* previewView;

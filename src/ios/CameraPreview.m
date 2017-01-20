@@ -7,6 +7,16 @@
 #import <math.h>
 #import "MainViewController.h"
 
+
+#pragma mark Temp util class, should be in separate file
+
+@interface AssetProcessorUtil : NSObject
+
++ (NSURL *)documentFileWithExt:(NSString *)ext;
++ (void)extractAudioTrackFromAsset:(AVAsset *)asset outputURL:(NSURL *)url complection:(void (^)(BOOL, NSError *))completion;
+
+@end
+
 @implementation CameraPreview
 
 static inline CGFloat RadiansToDegrees(CGFloat radians) {
@@ -827,8 +837,63 @@ static inline CGFloat RadiansToDegrees(CGFloat radians) {
     
 }
 
+- (void) extractAudio:(CDVInvokedUrlCommand*) command
+{
+    if([command.arguments count] < 2)
+    {
+        NSLog(@"Invalid arguments");
+        
+        CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Invalid parameters."];
+        [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+        
+        return;
+    }
+    
+    NSString *videoPath = [command.arguments objectAtIndex:0];
+    NSString *outputPath = [command.arguments objectAtIndex:1]; //Ignore for now.
+    
+    NSLog(@"videoPath %@", videoPath);
+    NSLog(@"outputPath %@", outputPath);
+    
+    self.extractAudioCallbackId = command.callbackId;
+    
+    NSURL *url = [NSURL URLWithString:videoPath];
+    
+    AVURLAsset *asset = [[AVURLAsset alloc] initWithURL:url options:nil];
+    NSURL *outputUrl =  [AssetProcessorUtil documentFileWithExt:@"m4a"];
+    NSLog(@"Storing at %@", outputUrl.absoluteString);
+    [AssetProcessorUtil extractAudioTrackFromAsset:asset outputURL:outputUrl complection:^(BOOL success, NSError *error) {
+        if( success)
+        {
+            NSLog(@"...E.X.P.O.R.T.E.D...");
+            
+            NSMutableDictionary *outputResult = [NSMutableDictionary dictionary];
+            [outputResult setValue:outputUrl.absoluteString forKey:@"outputFilePath"];
+            [outputResult setValue:@"m4a" forKey:@"format"];
 
--(float) round:(float)num toSignificantFigures:(int)n {
+            CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:outputResult];
+            [self.commandDelegate sendPluginResult:result callbackId:self.extractAudioCallbackId];
+        }
+        else
+        {
+            NSLog(@"...F.A.I.L...");
+            
+            CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Failed to extract audio."];
+            [self.commandDelegate sendPluginResult:result callbackId:self.extractAudioCallbackId];
+            
+        }
+    }];
+    
+    
+}
+
+- (void) composeFrames:(CDVInvokedUrlCommand*) command
+{
+
+}
+
+
+- (float) round:(float)num toSignificantFigures:(int)n {
     if(num == 0) {
         return 0;
     }
@@ -910,3 +975,58 @@ static inline CGFloat RadiansToDegrees(CGFloat radians) {
 
 
 @end
+
+
+#pragma mark Asset util
+@implementation AssetProcessorUtil
+
+
++ (NSURL *)documentFileWithExt:(NSString *)ext
+{
+    NSArray *arr = [[NSFileManager defaultManager] URLsForDirectory: NSDocumentDirectory
+                                                          inDomains: NSUserDomainMask];
+    NSURL *documentsUrl = [arr firstObject];
+    NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+    formatter.dateFormat = @"YYYYMMddHHmmss";
+    NSString *fileName = [NSString stringWithFormat:@"output_%@.%@", [formatter stringFromDate:[NSDate new]], ext];
+    NSURL *outputUrl =  [documentsUrl URLByAppendingPathComponent:fileName];
+    return outputUrl;
+}
+
++ (void)extractAudioTrackFromAsset:(AVAsset *)asset outputURL:(NSURL *)url complection:(void (^)(BOOL, NSError *))completion;
+{
+    AVAssetExportSession *session = [[AVAssetExportSession alloc] initWithAsset:asset presetName:AVAssetExportPresetAppleM4A];
+    
+    if(session != nil)
+    {
+        session.outputFileType = AVFileTypeAppleM4A;
+        session.outputURL = url;
+        session.timeRange = CMTimeRangeMake(kCMTimeZero, [asset duration]);
+        
+        [session exportAsynchronouslyWithCompletionHandler:^{
+            
+            if(session.status == AVAssetExportSessionStatusCompleted)
+            {
+                NSLog(@"Completed..");
+                completion(true, nil);
+            }
+            else if (session.status == AVAssetExportSessionStatusExporting)
+            {
+                NSLog(@"Exporting...");
+            }
+            else
+            {
+                NSLog(@"Export Failed status = %ld", (long)session.status);
+                completion(false, nil);
+            }
+        }];
+    }
+    else
+    {
+        NSLog(@"Failed to create session");
+        completion(false, nil);
+    }
+}
+
+@end
+
